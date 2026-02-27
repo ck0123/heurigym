@@ -66,8 +66,8 @@ Where:
     $$ViaCount = \sum_{N \in \mathcal{N}} |\{ e \in E(Path_N) \cap \mathcal{E}_Z \}|$$
 * **$Score_{overflow}$ (Total Overflow Score):** The penalty for exceeding edge capacities.
     * **Demand $d(e)$:** For any edge $e \in \mathcal{E}_H \cup \mathcal{E}_V$, the demand is the number of nets routed through it: $d(e) = |\{ N \in \mathcal{N} \mid e \in E(Path_N) \}|$.
-    * **Edge Overflow Cost $O(e)$:** Let $c(e)$ be the capacity of edge $e$, and $l(e)$ be its layer index. Let $OFWeight[l(e)]$ be the overflow weight for that layer (from `.cap`).
-        $$O(e) = \begin{cases} OFWeight[l(e)] \times \exp(0.5 \times (d(e) - c(e))) & \text{if } d(e) > c(e) \\ 0 & \text{if } d(e) \le c(e) \end{cases}$$
+    * **Edge Overflow Cost $O(e)$:** Let $c(e)$ be the capacity of edge $e$, and $l(e)$ be its layer index. Let $OFWeight[l(e)]$ be the overflow weight for that layer (from `.cap`). The overflow penalty should be applied regardless of whether an overflow actually occurred.
+        $$O(e) = OFWeight[l(e)] \times \exp(0.5 \times (d(e) - c(e)))$$
     * **Total Overflow Score:** Sum of overflow costs over all horizontal and vertical edges.
         $$Score_{overflow} = \sum_{e \in \mathcal{E}_H \cup \mathcal{E}_V} O(e)$$
 
