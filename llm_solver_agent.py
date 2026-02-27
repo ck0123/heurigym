@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from datetime import datetime
 from config import calculate_cost
-from datasets import load_dataset
+
 from huggingface_hub import login
 
 HF_REPO_ID = "heurigen/heurigen-data"
@@ -250,7 +250,11 @@ class ProgramExecutor:
                     error_data = {
                         "message": f"Program execution timed out after {self.timeout} seconds"
                     }
-                    os.killpg(e.pid, signal.SIGTERM)  # You can also use SIGKILL
+                    if hasattr(e, 'pid'):
+                        try:
+                            os.killpg(e.pid, signal.SIGTERM)  # You can also use SIGKILL
+                        except ProcessLookupError:
+                            pass
                     with open(cost_file, 'w') as f:
                         json.dump(error_data, f, indent=2)
                     all_outputs.append(f"Test case {base_name}:\nProgram execution timed out after {self.timeout} seconds")
@@ -336,7 +340,8 @@ class ProgramExecutor:
             return True, combined_output
             
         except Exception as e:
-            return False, f"Error: {str(e)}"
+            import traceback
+            return False, f"Error: {str(e)}\nTraceback:\n{traceback.format_exc()}"
             
     def extract_results(self, output: str) -> Dict:
         """Extracts and parses the results from program output."""
@@ -367,7 +372,8 @@ class ProgramExecutor:
                 
             return results
         except Exception as e:
-            logger.error(f"Error extracting results: {str(e)}")
+            import traceback
+            logger.error(f"Error extracting results: {str(e)}\nTraceback:\n{traceback.format_exc()}")
             return {'Cost': float('inf')}
             
 
@@ -865,7 +871,8 @@ Your goal is to improve the solution for as many test cases as possible, with sp
             self.conversation_history[model].append({"role": "assistant", "content": raw_response})
             
         except Exception as e:
-            error_msg = f"Error: Failed to get response from model {model}: {str(e)}!!! Exiting..."
+            import traceback
+            error_msg = f"Error: Failed to get response from model {model}: {str(e)}\nTraceback:\n{traceback.format_exc()}\n!!! Exiting..."
             logger.error(error_msg)
             sys.exit(1)
             
@@ -979,10 +986,12 @@ Your goal is to improve the solution for as many test cases as possible, with sp
                     time.sleep(sleep_time)
                 
             except Exception as e:
+                import traceback
                 logger.error(f"Error in iteration {iteration+1}: {str(e)}")
                 # Log the error to the log file
                 with open(log_file, 'a') as f:
                     f.write(f"ERROR IN ITERATION {iteration+1}: {str(e)}\n")
+                    f.write(f"Traceback:\n{traceback.format_exc()}\n")
                     f.write("=" * 80 + "\n\n")
                 raise
         
@@ -1110,9 +1119,42 @@ def main():
     # Initialize components
     problem_reader = ProblemReader(workspace_root)
     
-    # Load dataset first
-    dataset = load_dataset(HF_REPO_ID, name=args.problem, data_dir="_datasets", token=token, trust_remote_code=True)  # ignore cached old copy
-    print(f"Loaded dataset from HuggingFace: {HF_REPO_ID}/{args.problem}")
+    # Let huggingface download the data directly to the workspace_root / _datasets folder
+    local_dataset_base_dir = Path(workspace_root) / "_datasets"
+    local_dataset_base_dir.mkdir(parents=True, exist_ok=True)
+    
+    from huggingface_hub import snapshot_download
+    print(f"Downloading dataset directly to {local_dataset_base_dir}")
+    snapshot_download(
+        repo_id=HF_REPO_ID,
+        repo_type="dataset",
+        allow_patterns=f"{args.problem}/*",
+        local_dir=str(local_dataset_base_dir),
+        token=token
+    )
+    
+    # Construct a dataset mapping for the rest of the script without using datasets module
+    dataset_dir = local_dataset_base_dir / args.problem
+    file_paths = []
+    
+    # Use os.walk to find all test cases
+    for root, dirs, files in os.walk(dataset_dir):
+        # Exclude hidden directories and pycache
+        dirs[:] = [d for d in dirs if not d.startswith('.') and d != '__pycache__']
+        for file in files:
+            # Exclude hidden files and Python scripts (e.g., data_preprocess.py)
+            if not file.startswith('.') and not file.endswith('.py'):
+                file_paths.append(str(Path(root) / file))
+                
+    if not file_paths:
+        error_msg = f"Error: Failed to fetch any test case files for problem '{args.problem}' from {HF_REPO_ID}. Please check the HuggingFace repository structure or your network connection."
+        logger.error(error_msg)
+        import sys
+        sys.exit(1)
+                
+    dataset = {"train": {"file_path": sorted(file_paths)}}
+    print(f"Loaded {len(file_paths)} test case files locally for {HF_REPO_ID}/{args.problem}")
+
     
     # Initialize LLM interface with dataset and history_rounds
     llm_interface = LLMInterface(args.models, dataset, args.timeout, args.temperature, args.stream, args.history_rounds, args.few_shots)
@@ -1210,7 +1252,8 @@ def main():
                 logger.info(f"Summary saved to {summary_file}")
                 
         except Exception as e:
-            logger.error(f"Error processing {problem_folder}: {str(e)}")
+            import traceback
+            logger.error(f"Error processing {problem_folder}: {str(e)}\nTraceback:\n{traceback.format_exc()}")
             continue
 
 if __name__ == "__main__":

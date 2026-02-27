@@ -305,8 +305,32 @@ def main():
         print(f"\nRemoved {removed_count} output folders")
 
     if not os.path.exists(dataset_path):
-        print(f"Error: Dataset path '{dataset_path}' does not exist")
-        sys.exit(1)
+        print(f"Warning: Dataset path '{dataset_path}' does not exist. Attempting to download from HuggingFace...")
+        try:
+            from huggingface_hub import snapshot_download
+            from pathlib import Path
+            
+            # Use same HF_REPO_ID and logic as llm_solver_agent.py
+            HF_REPO_ID = "heurigen/heurigen-data"
+            token = os.getenv("HUGGINGFACE_TOKEN")
+            
+            # Download the required problem directory directly into _datasets 
+            # Note: The parent of dataset_path should be _datasets
+            local_dataset_base_dir = Path(dataset_path).parent
+            local_dataset_base_dir.mkdir(parents=True, exist_ok=True)
+            
+            snapshot_download(
+                repo_id=HF_REPO_ID,
+                repo_type="dataset",
+                allow_patterns=f"{problem_name}/*",
+                local_dir=str(local_dataset_base_dir),
+                token=token
+            )
+                        
+            print(f"Successfully downloaded dataset to {dataset_path}")
+        except Exception as e:
+            print(f"Error: Failed to download dataset to '{dataset_path}': {str(e)}")
+            sys.exit(1)
 
     preprocess_path = os.path.join(dataset_path, "data_preprocess.py")
     if os.path.exists(preprocess_path):
