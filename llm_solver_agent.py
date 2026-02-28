@@ -220,7 +220,7 @@ class ProgramExecutor:
                 
                 try:
                     # Prepare the command with all input files in the group
-                    cmd = ['taskset', '-c', '0-' + str(self.num_cores - 1), 'python3', 'main.py']
+                    cmd = ['taskset', '-c', '0-' + str(self.num_cores - 1), sys.executable, 'main.py']
                     cmd.extend(sorted(group_files))  # Add all input files
                     cmd.append(str(output_file))  # Add output file
                     
@@ -282,7 +282,7 @@ class ProgramExecutor:
                 
                 
                 # Prepare evaluator command with all input files
-                eval_cmd = ['python3', 'feedback.py']
+                eval_cmd = [sys.executable, 'feedback.py']
                 eval_cmd.extend(sorted(group_files))  # Add all input files
                 eval_cmd.append(str(output_file))  # Add output file
                 
@@ -431,9 +431,14 @@ class LLMInterface:
                 config = self.model_configs[provider]
                 if not config['api_key']:
                     raise ValueError(f"{provider.upper()}_API_KEY is required for {provider} models but not provided")
+                import httpx
+                # Thinking models (e.g. gemini-3.1-pro-preview) can take several
+                # minutes to generate a response; use a generous timeout for OpenRouter.
+                client_timeout = httpx.Timeout(1200.0, connect=10.0) if provider == "openrouter" else None
                 self.clients[provider] = OpenAI(
                     api_key=config['api_key'],
-                    base_url=config['base_url']
+                    base_url=config['base_url'],
+                    timeout=client_timeout
                 )
         
         # Load prompt template
@@ -707,26 +712,56 @@ Your goal is to improve the solution for as many test cases as possible, with sp
             json.dump(api_info, f, indent=2)
 
     def get_model_max_tokens(self, base_url: str, api_key: str, model_name: str):
+        # For OpenRouter, fetch the actual max_completion_tokens from model metadata
+        # instead of probing, because OpenRouter accepts arbitrarily large max_tokens
+        # in the probe even when the model's real limit is much lower (e.g. 65536 for
+        # gemini-3.1-pro-preview). Sending an inflated value causes thinking models to
+        # exhaust their token budget on reasoning and return empty content.
+        if "openrouter.ai" in base_url:
+            try:
+                meta_resp = requests.get(
+                    "https://openrouter.ai/api/v1/models",
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    timeout=15
+                )
+                if meta_resp.status_code == 200:
+                    for m in meta_resp.json().get("data", []):
+                        if m["id"] == model_name:
+                            limit = m.get("top_provider", {}).get("max_completion_tokens")
+                            if limit:
+                                # Cap at 65536: some models report max_completion_tokens equal to
+                                # their full context window (e.g. deepseek-v3.2=163840,
+                                # minimax-m2.5=196608), leaving no room for input tokens and
+                                # causing 400 errors. 65536 is sufficient for code generation.
+                                limit = min(limit, 65536)
+                                logger.info(f"OpenRouter model {model_name}: max_completion_tokens={limit}")
+                                return limit
+            except Exception as e:
+                logger.warning(f"Could not fetch OpenRouter model metadata: {e}")
+
         url = f"{base_url.rstrip('/')}/chat/completions"
         headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
-    
+
         for max_tokens in [200000, 100000, 65536, 32768, 16384, 8192, 4096, 2048]:
             data = {
                 "model": model_name,
                 "messages": [{"role": "user", "content": "Hello"}],
                 "max_tokens": 1
             }
-        
+
             if any(x in model_name for x in ['o1', 'o3', 'o4']):
                 data["max_completion_tokens"] = max_tokens
                 del data["max_tokens"]
             else:
                 data["max_tokens"] = max_tokens
-        
+
             try:
                 response = requests.post(url, headers=headers, json=data, timeout=10)
                 if response.status_code == 200:
-                    return max_tokens
+                    # Cap at 65536 for safety: the probe uses a tiny "Hello" input, so
+                    # a large max_tokens value passes even when the model's total context
+                    # limit would reject it with real (large) prompts.
+                    return min(max_tokens, 65536)
             except:
                 continue
 
@@ -824,7 +859,14 @@ Your goal is to improve the solution for as many test cases as possible, with sp
                 # Non O-series models use max_tokens and custom temperature
                 api_params["max_tokens"] = max_tokens
                 api_params["temperature"] = self.temperature
-            
+                # For OpenRouter thinking/reasoning models (e.g. gemini-3.x), cap the
+                # reasoning token budget so the model does not exhaust its entire
+                # completion budget on internal chain-of-thought and return empty content.
+                if provider == "openrouter" and any(x in actual_model for x in ["gemini-3", "gemini-2.5"]):
+                    reasoning_budget = min(8000, max_tokens // 2)
+                    api_params["extra_body"] = {"reasoning": {"max_tokens": reasoning_budget}}
+                    logger.info(f"Set reasoning budget to {reasoning_budget} tokens for thinking model {actual_model}")
+
             # Make API call using unified OpenAI format
             response = client.chat.completions.create(**api_params)
             
@@ -862,6 +904,23 @@ Your goal is to improve the solution for as many test cases as possible, with sp
                 prompt_tokens = response.usage.prompt_tokens
                 completion_tokens = response.usage.completion_tokens
             
+            if not raw_response or not raw_response.strip():
+                # If we had a reasoning budget set, retry once with reasoning fully excluded.
+                # This handles cases where the model exhausts its reasoning budget on complex
+                # prompts (e.g. crew_pairing) and produces empty actual content.
+                if "extra_body" in api_params and "reasoning" in api_params.get("extra_body", {}):
+                    logger.warning(
+                        f"Empty response with reasoning budget — retrying with reasoning excluded for {model}..."
+                    )
+                    retry_params = dict(api_params)
+                    retry_params["extra_body"] = {"reasoning": {"exclude": True}}
+                    retry_resp = client.chat.completions.create(**retry_params)
+                    if not self.stream:
+                        if retry_resp and retry_resp.choices:
+                            raw_response = retry_resp.choices[0].message.content or ""
+                            prompt_tokens += retry_resp.usage.prompt_tokens
+                            completion_tokens += retry_resp.usage.completion_tokens
+
             if not raw_response or not raw_response.strip():
                 error_msg = f"Error: Empty response received from model {model}!!! Exiting..."
                 logger.error(error_msg)
@@ -1149,7 +1208,6 @@ def main():
     if not file_paths:
         error_msg = f"Error: Failed to fetch any test case files for problem '{args.problem}' from {HF_REPO_ID}. Please check the HuggingFace repository structure or your network connection."
         logger.error(error_msg)
-        import sys
         sys.exit(1)
                 
     dataset = {"train": {"file_path": sorted(file_paths)}}
@@ -1212,7 +1270,7 @@ def main():
                 
                 # Run collect_results.py with the appropriate arguments
                 collect_cmd = [
-                    "python3",
+                    sys.executable,
                     "scripts/collect_results.py",
                     str(llm_solutions_dir),
                     str(dataset_path),
