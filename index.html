@@ -744,6 +744,20 @@ function drawScatter(data) {
   const y = d3.scaleLinear().domain([0.15, 1.05]).range([H - mg.bottom, mg.top]);
   const color = d3.scaleOrdinal(d3.schemeTableau10).domain(data.map(d => d.Model));
 
+  // ── "Most Attractive" zone: high Yield + high Quality
+  const GX = 0.65, GY = 0.65;
+  svg.append("rect")
+    .attr("x", x(GX)).attr("y", y(1.04))
+    .attr("width", x(1.02) - x(GX))
+    .attr("height", y(GY) - y(1.04))
+    .attr("fill", "#dcfce7").attr("fill-opacity", 0.65)
+    .attr("stroke", "none");
+  svg.append("text")
+    .attr("x", x(GX) + 8).attr("y", y(1.04) + 14)
+    .attr("font-size", "10").attr("font-weight", "700")
+    .attr("fill", "#15803d")
+    .text("★ Most Attractive");
+
   // Grid
   [x, y].forEach((sc, i) => {
     const axis = i === 0 ? d3.axisBottom(sc) : d3.axisLeft(sc);
@@ -869,6 +883,20 @@ function drawCostChart(data) {
   const x = d3.scaleLog().domain([0.3, 35]).range([mg.left, W - mg.right]);
   const y = d3.scaleLinear().domain([0, 1.05]).range([H - mg.bottom, mg.top]);
   const color = d3.scaleOrdinal(d3.schemeTableau10).domain(valid.map(d => d.Model));
+
+  // ── "Most Attractive" zone: low Cost + high QYI
+  const GCOST = 6, GQYI = 0.55;
+  svg.append("rect")
+    .attr("x", x(0.3)).attr("y", y(1.04))
+    .attr("width", x(GCOST) - x(0.3))
+    .attr("height", y(GQYI) - y(1.04))
+    .attr("fill", "#dcfce7").attr("fill-opacity", 0.65)
+    .attr("stroke", "none");
+  svg.append("text")
+    .attr("x", x(0.3) + 8).attr("y", y(1.04) + 14)
+    .attr("font-size", "10").attr("font-weight", "700")
+    .attr("fill", "#15803d")
+    .text("★ Most Attractive");
 
   // Horizontal grid only
   svg.append("g").attr("class","grid")
