@@ -550,6 +550,16 @@
       font-family: 'JetBrains Mono','Fira Code','Cascadia Code','Consolas',monospace;
     }
     .cm-pre code { background: none !important; padding: 0 !important; font-size: inherit !important; }
+    /* line-numbers plugin */
+    .cm-pre .hljs-ln { border-collapse: collapse; width: 100%; }
+    .cm-pre .hljs-ln td { padding: 0; }
+    .cm-pre .hljs-ln-numbers {
+      width: 2.8em; padding-right: 1em !important;
+      text-align: right; vertical-align: top;
+      color: #4a5568; border-right: 1px solid #2d2d44;
+      user-select: none; cursor: default;
+    }
+    .cm-pre .hljs-ln-code { padding-left: 1em !important; }
     /* view-code button in table */
     .code-view-btn {
       display: inline-flex; align-items: center; gap: 0.3rem;
@@ -1417,6 +1427,7 @@ async function showCode(modelName, problemKey) {
   codeEl.textContent = code;
   if (!window.hljs) await loadHljs();
   hljs.highlightElement(codeEl);
+  hljs.lineNumbersBlock(codeEl);
 
   const modal = document.getElementById("code-modal");
   modal.classList.remove("hidden");
@@ -1451,7 +1462,12 @@ function loadHljs() {
     s.onload = () => {
       const py = document.createElement("script");
       py.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js";
-      py.onload = resolve;
+      py.onload = () => {
+        const ln = document.createElement("script");
+        ln.src = "https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js";
+        ln.onload = resolve;
+        document.head.appendChild(ln);
+      };
       document.head.appendChild(py);
     };
     document.head.appendChild(s);
