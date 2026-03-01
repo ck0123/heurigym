@@ -192,6 +192,12 @@
       white-space: nowrap;
     }
     .authors a:hover { color: var(--accent); text-decoration: underline; }
+    .authors sup { font-size: 0.65em; color: var(--accent); vertical-align: super; }
+    .authors-note {
+      font-size: 0.78rem; color: var(--text-muted);
+      margin: -0.4rem auto 1.5rem; max-width: 720px;
+    }
+    .authors-note sup { font-size: 0.65em; color: var(--accent); vertical-align: super; }
     .institutions {
       display: flex;
       justify-content: center;
@@ -493,6 +499,74 @@
     .copy-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
     .copy-btn.copied { color: var(--green); border-color: var(--green); background: var(--green-bg); }
 
+    /* ── CODE MODAL ── */
+    .code-modal {
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .code-modal.hidden { display: none; }
+    .cm-backdrop {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.55);
+    }
+    .cm-inner {
+      position: relative;
+      width: min(920px, 95vw); max-height: 86vh;
+      background: #1e1e2e; border-radius: 0.75rem;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    }
+    .cm-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: #16162a; flex-shrink: 0;
+    }
+    .cm-title { font-size: 0.88rem; }
+    .cm-title-model { font-weight: 700; color: #e2e8f0; }
+    .cm-title-sep { color: #4a5568; margin: 0 0.4rem; }
+    .cm-title-problem { color: #94a3b8; }
+    .cm-actions { display: flex; gap: 0.5rem; align-items: center; }
+    .cm-copy-btn {
+      padding: 0.28rem 0.7rem; font-size: 0.78rem; font-weight: 600;
+      border-radius: 0.375rem; border: 1px solid rgba(255,255,255,0.2);
+      background: transparent; color: #cbd5e1; cursor: pointer;
+      transition: background 0.15s; font-family: inherit;
+    }
+    .cm-copy-btn:hover { background: rgba(255,255,255,0.12); }
+    .cm-copy-btn.copied { color: #4ade80; border-color: #4ade80; }
+    .cm-close-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none; background: rgba(255,255,255,0.1); color: #cbd5e1;
+      font-size: 1.1rem; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      transition: background 0.15s; font-family: inherit; line-height: 1;
+    }
+    .cm-close-btn:hover { background: rgba(255,255,255,0.2); }
+    .cm-pre {
+      overflow: auto; margin: 0; padding: 1.1rem 1.4rem;
+      flex: 1; font-size: 0.81rem; line-height: 1.65;
+      font-family: 'JetBrains Mono','Fira Code','Cascadia Code','Consolas',monospace;
+    }
+    .cm-pre code { background: none !important; padding: 0 !important; font-size: inherit !important; }
+    /* view-code button in table */
+    .code-view-btn {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.22rem 0.6rem; font-size: 0.75rem; font-weight: 600;
+      border-radius: 0.35rem; border: 1px solid var(--border);
+      background: white; color: var(--text-muted); cursor: pointer;
+      transition: all 0.15s; font-family: inherit; white-space: nowrap;
+    }
+    .code-view-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    /* code icon in bar chart */
+    .bar-code-btn {
+      flex-shrink: 0; padding: 0.1rem 0.4rem; font-size: 0.7rem;
+      border-radius: 0.3rem; border: 1px solid var(--border);
+      background: white; color: var(--text-muted); cursor: pointer;
+      transition: all 0.15s; font-family: inherit; opacity: 0;
+    }
+    .bar-row:hover .bar-code-btn { opacity: 1; }
+    .bar-code-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); opacity: 1; }
+
     /* ── FOOTER ── */
     footer {
       background: var(--bg-alt);
@@ -517,6 +591,25 @@
 </head>
 <body>
 
+<!-- CODE MODAL -->
+<div id="code-modal" class="code-modal hidden">
+  <div class="cm-backdrop" onclick="closeCodeModal()"></div>
+  <div class="cm-inner">
+    <div class="cm-header">
+      <div class="cm-title">
+        <span class="cm-title-model" id="cm-model"></span>
+        <span class="cm-title-sep">/</span>
+        <span class="cm-title-problem" id="cm-problem"></span>
+      </div>
+      <div class="cm-actions">
+        <button class="cm-copy-btn" id="cm-copy-btn" onclick="copyCode()">Copy</button>
+        <button class="cm-close-btn" onclick="closeCodeModal()">×</button>
+      </div>
+    </div>
+    <pre class="cm-pre"><code class="language-python" id="cm-code"></code></pre>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav>
   <a class="nav-brand" href="#home">Heuri<span>Gym</span></a>
@@ -536,11 +629,11 @@
   <div class="hero-badge">ICLR 2026 Benchmark</div>
   <p>An agentic benchmark for evaluating how well LLMs generate and refine heuristics for real-world combinatorial optimization tasks.</p>
   <div class="authors">
-    <a href="https://chhzh123.github.io/" target="_blank">Hongzheng Chen</a>,
-    <a href="https://isjakewong.github.io/" target="_blank">Yingheng Wang</a>,
-    <a href="https://www.csl.cornell.edu/~yc2632/" target="_blank">Yaohui Cai</a>,
-    <a href="https://www.linkedin.com/in/hins-hu/" target="_blank">Hins Hu</a>,
-    <a href="https://tonyjie.github.io/" target="_blank">Jiajie Li</a>,
+    <a href="https://chhzh123.github.io/" target="_blank">Hongzheng Chen</a><sup>*</sup>,
+    <a href="https://isjakewong.github.io/" target="_blank">Yingheng Wang</a><sup>*</sup>,
+    <a href="https://www.csl.cornell.edu/~yc2632/" target="_blank">Yaohui Cai</a><sup>*</sup>,
+    <a href="https://www.linkedin.com/in/hins-hu/" target="_blank">Hins Hu</a><sup>*</sup>,
+    <a href="https://tonyjie.github.io/" target="_blank">Jiajie Li</a><sup>*</sup>,
     <a href="https://www.linkedin.com/in/shirley-huang-6b3ba217b/" target="_blank">Shirley Huang</a>,
     <a href="https://chenhui1016.github.io/" target="_blank">Chenhui Deng</a>,
     <a href="https://research.nvidia.com/person/rongjian-liang" target="_blank">Rongjian Liang</a>,
@@ -550,6 +643,7 @@
     <a href="https://www.cs.cornell.edu/gomes/" target="_blank">Carla P. Gomes</a>,
     <a href="https://www.csl.cornell.edu/~zhiruz/" target="_blank">Zhiru Zhang</a>
   </div>
+  <div class="authors-note"><sup>*</sup> Equal contribution</div>
   <div class="institutions">
     <img class="inst-logo inst-logo-cornell" src="assets/cornell.svg" alt="Cornell University">
     <img class="inst-logo inst-logo-harvard" src="assets/harvard.svg" alt="Harvard University">
@@ -664,6 +758,7 @@
             <th class="center" data-prob-col="QYI">QYI ↕<span class="sort-icon">▼</span></th>
             <th class="center" data-prob-col="Yield">Yield ↕<span class="sort-icon"></span></th>
             <th class="center" data-prob-col="Quality">Quality ↕<span class="sort-icon"></span></th>
+            <th class="center" style="width:80px">Solver</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -1107,6 +1202,10 @@ function renderProblemView() {
   rows.forEach(d => {
     const pct = Math.max(0, Math.min(100, d.QYI * 100));
     const color = `hsl(${(d.QYI*120).toFixed(0)},65%,42%)`;
+    const hasSolver = !!SOLVER_KEY[d.Model];
+    const codeBtn = hasSolver
+      ? `<button class="bar-code-btn" onclick="showCode('${d.Model}','${currentProblem}')" title="View solver code">⌨</button>`
+      : "";
     const div = document.createElement("div");
     div.className = "bar-row";
     div.innerHTML = `
@@ -1115,6 +1214,7 @@ function renderProblemView() {
         <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
       </div>
       <div class="bar-val" style="color:${color}">${fmt(d.QYI)}</div>
+      ${codeBtn}
     `;
     inner.appendChild(div);
   });
@@ -1124,12 +1224,17 @@ function renderProblemView() {
   tbody.innerHTML = "";
   rows.forEach(d => {
     const meta = metadata.find(m => m.Model === d.Model) || {};
+    const hasSolver = !!SOLVER_KEY[d.Model];
+    const codeCell = hasSolver
+      ? `<td class="metric-cell center"><button class="code-view-btn" onclick="showCode('${d.Model}','${currentProblem}')">⌨ Code</button></td>`
+      : `<td class="metric-cell center" style="color:var(--text-muted);font-size:0.8rem">—</td>`;
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td class="model-cell"><a href="${meta.URL||'#'}" target="_blank">${d.Model}</a></td>
       <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.QYI)};color:${heatText(d.QYI)}">${fmt(d.QYI)}</span></td>
       <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.Yield)};color:${heatText(d.Yield)}">${fmt(d.Yield)}</span></td>
       <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.Quality)};color:${heatText(d.Quality)}">${fmt(d.Quality)}</span></td>
+      ${codeCell}
     `;
     tbody.appendChild(tr);
   });
@@ -1266,6 +1371,87 @@ async function init() {
 }
 
 init();
+
+// ── SOLVER VIEWER ──────────────────────────────────────────────────────────────
+const SOLVER_KEY = {
+  "Gemini-3.1-Pro":    "gemini-3.1-pro-preview",
+  "GPT-5.3-Codex":     "gpt-5.3-codex",
+  "Claude-Opus-4.6":   "claude-opus-4-6",
+  "GLM-5":             "glm-5",
+  "Gemini-3-Flash":    "gemini-3-flash-preview",
+  "Grok-4":            "grok-4",
+  "Kimi-K2.5":         "kimi-k2.5",
+  "Qwen3.5-397B":      "qwen3.5-397b-a17b",
+  "MiniMax-M2.5":      "minimax-m2.5",
+  "DeepSeek-V3.2":     "deepseek-v3.2",
+};
+let solversData = null;
+
+async function loadSolvers() {
+  if (solversData) return solversData;
+  const r = await fetch("results/solvers.json");
+  solversData = await r.json();
+  return solversData;
+}
+
+async function showCode(modelName, problemKey) {
+  const solverKey = SOLVER_KEY[modelName];
+  if (!solverKey) return;
+  const data = await loadSolvers();
+  const code = data?.[solverKey]?.[problemKey];
+  if (!code) return;
+
+  const pInfo = PROBLEMS.find(p => p.key === problemKey);
+  document.getElementById("cm-model").textContent = modelName;
+  document.getElementById("cm-problem").textContent = pInfo ? pInfo.label : problemKey;
+
+  const codeEl = document.getElementById("cm-code");
+  codeEl.removeAttribute("data-highlighted");
+  codeEl.textContent = code;
+  if (!window.hljs) await loadHljs();
+  hljs.highlightElement(codeEl);
+
+  const modal = document.getElementById("code-modal");
+  modal.classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  document.getElementById("cm-copy-btn").textContent = "Copy";
+  document.getElementById("cm-copy-btn").classList.remove("copied");
+}
+
+function closeCodeModal() {
+  document.getElementById("code-modal").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+
+function copyCode() {
+  const code = document.getElementById("cm-code").textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById("cm-copy-btn");
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1800);
+  });
+}
+
+function loadHljs() {
+  return new Promise(resolve => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css";
+    document.head.appendChild(link);
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js";
+    s.onload = () => {
+      const py = document.createElement("script");
+      py.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js";
+      py.onload = resolve;
+      document.head.appendChild(py);
+    };
+    document.head.appendChild(s);
+  });
+}
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeCodeModal(); });
 </script>
 </body>
 </html>
