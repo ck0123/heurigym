@@ -19,6 +19,8 @@
     <a href="#-citation">📜Citation</a>
 </p>
 
+**[Feb 2026]** Latest model results have been updated and shown in the [leaderboard website](https://cornell-zhang.github.io/heurigym/).
+
 ## 📘 About
 
 **HeuriGym** is a benchmark for evaluating how well LLMs generate and refine heuristics for real-world combinatorial optimization (CO) tasks through agentic, code-driven interaction.
