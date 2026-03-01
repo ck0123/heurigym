@@ -173,6 +173,34 @@
     }
     .hero-link.secondary:hover { background: var(--bg-alt); }
 
+    /* ── HERO AUTHORS / LOGOS ── */
+    .hero-logo {
+      height: 64px;
+      margin-bottom: 1.25rem;
+    }
+    .authors {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      max-width: 720px;
+      margin: 0 auto 1.1rem;
+      line-height: 2;
+    }
+    .authors a {
+      color: var(--text-muted);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .authors a:hover { color: var(--accent); text-decoration: underline; }
+    .institutions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      margin: 0.5rem auto 1.75rem;
+    }
+    .inst-logo { height: 24px; opacity: 0.7; }
+
     /* ── SECTIONS ── */
     .section { padding: 3.5rem 1.5rem; }
     .section.alt { background: var(--bg-alt); }
@@ -500,9 +528,20 @@
 
 <!-- HERO -->
 <section class="hero" id="home">
+  <img class="hero-logo" src="assets/logo.svg" alt="HeuriGym">
   <div class="hero-badge">ICLR 2026 Benchmark</div>
   <h1>Heuri<span>Gym</span> Leaderboard</h1>
   <p>An agentic benchmark for evaluating how well LLMs generate and refine heuristics for real-world combinatorial optimization tasks.</p>
+  <div class="authors">
+    Hongzheng Chen, Yingheng Wang, Yaohui Cai, Hins Hu, Jiajie Li, Shirley Huang,
+    Chenhui Deng, Rongjian Liang, Shufeng Kong, Haoxing Ren,
+    Samitha Samaranayake, Carla P. Gomes, Zhiru Zhang
+  </div>
+  <div class="institutions">
+    <img class="inst-logo" src="assets/cornell.svg" alt="Cornell University">
+    <img class="inst-logo" src="assets/harvard.svg" alt="Harvard University">
+    <img class="inst-logo" src="assets/nvidia.svg" alt="NVIDIA">
+  </div>
   <div class="stats-row">
     <div class="stat-card"><div class="stat-num">19</div><div class="stat-label">Models Evaluated</div></div>
     <div class="stat-card"><div class="stat-num">9</div><div class="stat-label">Problems</div></div>
