@@ -1194,24 +1194,31 @@ def main():
     
     # Construct a dataset mapping for the rest of the script without using datasets module
     dataset_dir = local_dataset_base_dir / args.problem
+    # Only use the demo split (training set) for LLM prompts.
+    # The eval split is the held-out test set and must not be shown to the model.
+    demo_dir = dataset_dir / "demo"
+    if not demo_dir.exists():
+        error_msg = f"Error: demo folder not found at {demo_dir}. Expected _datasets/{args.problem}/demo/."
+        logger.error(error_msg)
+        sys.exit(1)
     file_paths = []
-    
-    # Use os.walk to find all test cases
-    for root, dirs, files in os.walk(dataset_dir):
+
+    # Use os.walk to find all demo (training) test cases
+    for root, dirs, files in os.walk(demo_dir):
         # Exclude hidden directories and pycache
         dirs[:] = [d for d in dirs if not d.startswith('.') and d != '__pycache__']
         for file in files:
             # Exclude hidden files and Python scripts (e.g., data_preprocess.py)
             if not file.startswith('.') and not file.endswith('.py'):
                 file_paths.append(str(Path(root) / file))
-                
+
     if not file_paths:
-        error_msg = f"Error: Failed to fetch any test case files for problem '{args.problem}' from {HF_REPO_ID}. Please check the HuggingFace repository structure or your network connection."
+        error_msg = f"Error: Failed to fetch any demo test case files for problem '{args.problem}' from {HF_REPO_ID}. Please check the HuggingFace repository structure or your network connection."
         logger.error(error_msg)
         sys.exit(1)
-                
+
     dataset = {"train": {"file_path": sorted(file_paths)}}
-    print(f"Loaded {len(file_paths)} test case files locally for {HF_REPO_ID}/{args.problem}")
+    print(f"Loaded {len(file_paths)} demo test case files locally for {HF_REPO_ID}/{args.problem}")
 
     
     # Initialize LLM interface with dataset and history_rounds
