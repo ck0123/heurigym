@@ -188,10 +188,12 @@
     }
     .authors a {
       color: var(--text-muted);
-      text-decoration: none;
+      text-decoration: underline;
+      text-decoration-color: rgba(100,116,139,0.4);
+      text-underline-offset: 2px;
       white-space: nowrap;
     }
-    .authors a:hover { color: var(--accent); text-decoration: underline; }
+    .authors a:hover { color: var(--accent); text-decoration-color: var(--accent); }
     .authors sup { font-size: 0.65em; color: var(--accent); vertical-align: super; }
     .authors-note {
       font-size: 0.78rem; color: var(--text-muted);
