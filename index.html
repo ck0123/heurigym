@@ -557,15 +557,20 @@
       transition: all 0.15s; font-family: inherit; white-space: nowrap;
     }
     .code-view-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
-    /* code icon in bar chart */
+    /* code slot in bar chart — fixed width so all bars align */
+    .bar-btn-slot { width: 76px; flex-shrink: 0; }
     .bar-code-btn {
-      flex-shrink: 0; padding: 0.1rem 0.4rem; font-size: 0.7rem;
-      border-radius: 0.3rem; border: 1px solid var(--border);
-      background: white; color: var(--text-muted); cursor: pointer;
-      transition: all 0.15s; font-family: inherit; opacity: 0;
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      width: 100%; padding: 0.18rem 0; font-size: 0.72rem; font-weight: 600;
+      justify-content: center;
+      border-radius: 0.3rem; border: 1px solid #C7D2FE;
+      background: var(--accent-light); color: var(--accent); cursor: pointer;
+      transition: all 0.15s; font-family: inherit;
     }
-    .bar-row:hover .bar-code-btn { opacity: 1; }
-    .bar-code-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); opacity: 1; }
+    .bar-code-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+    .bar-no-code {
+      display: inline-block; width: 100%; height: 22px;
+    }
 
     /* ── FOOTER ── */
     footer {
@@ -643,7 +648,7 @@
     <a href="https://www.cs.cornell.edu/gomes/" target="_blank">Carla P. Gomes</a>,
     <a href="https://www.csl.cornell.edu/~zhiruz/" target="_blank">Zhiru Zhang</a>
   </div>
-  <div class="authors-note"><sup>*</sup> Equal contribution</div>
+  <div class="authors-note"><sup>*</sup> Core contributor</div>
   <div class="institutions">
     <img class="inst-logo inst-logo-cornell" src="assets/cornell.svg" alt="Cornell University">
     <img class="inst-logo inst-logo-harvard" src="assets/harvard.svg" alt="Harvard University">
@@ -1203,9 +1208,9 @@ function renderProblemView() {
     const pct = Math.max(0, Math.min(100, d.QYI * 100));
     const color = `hsl(${(d.QYI*120).toFixed(0)},65%,42%)`;
     const hasSolver = !!SOLVER_KEY[d.Model];
-    const codeBtn = hasSolver
-      ? `<button class="bar-code-btn" onclick="showCode('${d.Model}','${currentProblem}')" title="View solver code">⌨</button>`
-      : "";
+    const slotContent = hasSolver
+      ? `<button class="bar-code-btn" onclick="showCode('${d.Model}','${currentProblem}')">&#60;/&#62; Code</button>`
+      : `<span class="bar-no-code"></span>`;
     const div = document.createElement("div");
     div.className = "bar-row";
     div.innerHTML = `
@@ -1214,7 +1219,7 @@ function renderProblemView() {
         <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
       </div>
       <div class="bar-val" style="color:${color}">${fmt(d.QYI)}</div>
-      ${codeBtn}
+      <div class="bar-btn-slot">${slotContent}</div>
     `;
     inner.appendChild(div);
   });
