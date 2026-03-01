@@ -175,8 +175,9 @@
 
     /* ── HERO AUTHORS / LOGOS ── */
     .hero-logo {
+      display: block;
       height: 64px;
-      margin-bottom: 1.25rem;
+      margin: 0 auto 1.25rem;
     }
     .authors {
       font-size: 0.875rem;
@@ -199,7 +200,10 @@
       flex-wrap: wrap;
       margin: 0.5rem auto 1.75rem;
     }
-    .inst-logo { height: 24px; opacity: 0.7; }
+    .inst-logo { height: auto; opacity: 0.75; }
+    .inst-logo-cornell { width: 160px; }
+    .inst-logo-harvard { width: 120px; }
+    .inst-logo-nvidia  { width: 130px; }
 
     /* ── SECTIONS ── */
     .section { padding: 3.5rem 1.5rem; }
@@ -538,9 +542,9 @@
     Samitha Samaranayake, Carla P. Gomes, Zhiru Zhang
   </div>
   <div class="institutions">
-    <img class="inst-logo" src="assets/cornell.svg" alt="Cornell University">
-    <img class="inst-logo" src="assets/harvard.svg" alt="Harvard University">
-    <img class="inst-logo" src="assets/nvidia.svg" alt="NVIDIA">
+    <img class="inst-logo inst-logo-cornell" src="assets/cornell.svg" alt="Cornell University">
+    <img class="inst-logo inst-logo-harvard" src="assets/harvard.svg" alt="Harvard University">
+    <img class="inst-logo inst-logo-nvidia"  src="assets/nvidia.svg"  alt="NVIDIA">
   </div>
   <div class="stats-row">
     <div class="stat-card"><div class="stat-num">19</div><div class="stat-label">Models Evaluated</div></div>
