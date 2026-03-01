@@ -617,7 +617,7 @@
         <tbody></tbody>
       </table>
     </div>
-    <p class="section-note">Per-problem breakdown available for 10 recently evaluated models (5 iterations, T=0). Data for earlier models is available in the overall leaderboard above.</p>
+    <p class="section-note">Per-problem QYI, Yield, and Quality for all 19 evaluated models. Original 9 models ran 10 iterations (T=0); the 10 recent models ran 5 iterations (T=0).</p>
   </div>
 </section>
 
@@ -702,6 +702,18 @@ let solveSort = { col: "solve@10 stage3", dir: "desc" };
 let currentProblem = PROBLEMS[0].key;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
+// Short display names for crowded scatter plots
+const SHORT_NAMES = {
+  "LLaMA-4-Maverick-17B-128E-Instruct": "LLaMA-4-Mvk",
+  "LLaMA-3.3-70B-Instruct":             "LLaMA-3.3-70B",
+  "Gemini-2.5-Flash-0417":              "Gemini-2.5-Flash",
+  "Gemini-2.5-Pro-0506":                "Gemini-2.5-Pro",
+  "Qwen3-235B-A22B":                    "Qwen3-235B",
+  "GPT-o4-mini:high":                   "GPT-o4-mini",
+  "DeepSeek-V3-0304":                   "DeepSeek-V3",
+};
+function shortName(m) { return SHORT_NAMES[m] || m; }
+
 function heatColor(v) {
   if (v <= 0) return "#F1F5F9";
   const h = v * 120;
@@ -799,6 +811,47 @@ function drawScatter(data) {
         .html(`<strong>${d.Model}</strong>QYI: ${fmt(qyi)}<br>Yield: ${fmt(yld)}<br>Quality: ${fmt(+d.Weighted_Quality)}<br>Cost: $${fmt(+d.Cost,2)}`);
     })
     .on("mouseleave", () => tt.style("opacity",0));
+
+  // ── Labels per model
+  const SCATTER_LABEL = {
+    "Gemini-3.1-Pro":                       [-8, -11, "end"],
+    "GPT-5.3-Codex":                        [-8,  15, "end"],
+    "Claude-Opus-4.6":                      [ 8, -11, "start"],
+    "GLM-5":                                [-8,  15, "end"],
+    "Gemini-3-Flash":                       [ 8,  15, "start"],
+    "Grok-4":                               [-8, -11, "end"],
+    "Gemini-2.5-Pro-0506":                  [-8, -11, "end"],
+    "GPT-o4-mini:high":                     [ 8,  15, "start"],
+    "Kimi-K2.5":                            [-8, -11, "end"],
+    "Qwen3.5-397B":                         [ 8,  15, "start"],
+    "DeepSeek-R1":                          [ 8,  15, "start"],
+    "Gemini-2.5-Flash-0417":               [ 8, -11, "start"],
+    "Claude-3.7-Sonnet":                   [-8,  15, "end"],
+    "Qwen3-235B-A22B":                     [ 8, -11, "start"],
+    "DeepSeek-V3-0304":                    [ 8,  15, "start"],
+    "DeepSeek-V3.2":                       [ 8, -11, "start"],
+    "MiniMax-M2.5":                        [-8, -11, "end"],
+    "LLaMA-3.3-70B-Instruct":              [ 8,  15, "start"],
+    "LLaMA-4-Maverick-17B-128E-Instruct":  [-8,  15, "end"],
+  };
+  svg.selectAll(".model-label").data(data).enter().append("text")
+    .attr("class", "model-label")
+    .attr("x", d => {
+      const lp = SCATTER_LABEL[d.Model] || [8, 0, "start"];
+      return x(+d.Weighted_Yield) + lp[0];
+    })
+    .attr("y", d => {
+      const yld = +d.Weighted_Yield, qyi = +d.Weighted_QYI;
+      const denom = 2*yld - qyi;
+      const qual = denom > 0.001 ? qyi*yld/denom : 0;
+      const lp = SCATTER_LABEL[d.Model] || [8, 0, "start"];
+      return y(qual) + lp[1];
+    })
+    .attr("text-anchor", d => (SCATTER_LABEL[d.Model] || [8, 0, "start"])[2])
+    .attr("font-size", "10")
+    .attr("fill", d => color(d.Model))
+    .attr("pointer-events", "none")
+    .text(d => shortName(d.Model));
 }
 
 // ── COST VS QYI CHART ─────────────────────────────────────────────────────────
@@ -857,6 +910,44 @@ function drawCostChart(data) {
         .html(`<strong>${d.Model}</strong>QYI: ${fmt(+d.Weighted_QYI)}<br>Yield: ${fmt(+d.Weighted_Yield)}<br>Quality: ${fmt(+d.Weighted_Quality)}<br>Cost: $${fmt(+d.Cost,2)}`);
     })
     .on("mouseleave", () => tt.style("opacity",0));
+
+  // ── Labels per model
+  const COST_LABEL = {
+    "LLaMA-3.3-70B-Instruct":              [ 8, -11, "start"],
+    "LLaMA-4-Maverick-17B-128E-Instruct":  [ 8,  15, "start"],
+    "DeepSeek-V3-0304":                    [ 8, -11, "start"],
+    "DeepSeek-V3.2":                       [-8,  15, "end"],
+    "Qwen3-235B-A22B":                     [ 8, -11, "start"],
+    "MiniMax-M2.5":                        [ 8,  15, "start"],
+    "Qwen3.5-397B":                        [ 8, -11, "start"],
+    "Gemini-2.5-Flash-0417":              [-8,  15, "end"],
+    "Kimi-K2.5":                           [ 8, -11, "start"],
+    "Gemini-3-Flash":                      [-8, -11, "end"],
+    "DeepSeek-R1":                         [ 8,  15, "start"],
+    "GLM-5":                               [ 8, -11, "start"],
+    "GPT-o4-mini:high":                    [-8, -11, "end"],
+    "GPT-5.3-Codex":                       [ 8, -11, "start"],
+    "Gemini-2.5-Pro-0506":                [-8,  15, "end"],
+    "Claude-3.7-Sonnet":                  [ 8,  15, "start"],
+    "Claude-Opus-4.6":                     [-8, -11, "end"],
+    "Grok-4":                              [-8,  15, "end"],
+    "Gemini-3.1-Pro":                      [-8, -11, "end"],
+  };
+  svg.selectAll(".cost-label").data(valid).enter().append("text")
+    .attr("class", "cost-label")
+    .attr("x", d => {
+      const lp = COST_LABEL[d.Model] || [8, 0, "start"];
+      return x(+d.Cost) + lp[0];
+    })
+    .attr("y", d => {
+      const lp = COST_LABEL[d.Model] || [8, 0, "start"];
+      return y(+d.Weighted_QYI) + lp[1];
+    })
+    .attr("text-anchor", d => (COST_LABEL[d.Model] || [8, 0, "start"])[2])
+    .attr("font-size", "10")
+    .attr("fill", d => color(d.Model))
+    .attr("pointer-events", "none")
+    .text(d => shortName(d.Model));
 }
 
 // ── LEADERBOARD ───────────────────────────────────────────────────────────────
