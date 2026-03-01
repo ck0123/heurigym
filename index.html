@@ -3,770 +3,1010 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>HeuriGym Leaderboard</title>
+  <title>HeuriGym — LLM Heuristics Benchmark</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-alt: #F8FAFC;
+      --border: #E2E8F0;
+      --text: #1E293B;
+      --text-muted: #64748B;
+      --accent: #4F46E5;
+      --accent-light: #EEF2FF;
+      --accent-hover: #4338CA;
+      --green: #16A34A;
+      --green-bg: #DCFCE7;
+      --amber: #D97706;
+      --amber-bg: #FEF3C7;
+      --red: #DC2626;
+      --red-bg: #FEE2E2;
+      --radius: 0.5rem;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: 'Open Sans', sans-serif;
-      margin: 0;
-      background-color: white;
-      color: #333;
-      min-width: 320px; /* Minimum width to prevent layout breaking */
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 15px;
+      line-height: 1.6;
     }
-    .header {
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .nav-brand span { color: var(--accent); }
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+      list-style: none;
+    }
+    .nav-links a {
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--bg-alt); }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #F0F4FF 0%, #FAFBFF 60%, #F8FAFC 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 4rem 1.5rem 3.5rem;
       text-align: center;
-      padding: 2.5rem 1rem 0.5rem;
-      font-size: 2.5rem;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-light);
+      color: var(--accent);
+      border: 1px solid #C7D2FE;
+      border-radius: 2rem;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8rem;
       font-weight: 600;
+      letter-spacing: 0.02em;
+      margin-bottom: 1.25rem;
     }
-    .subheader {
-      text-align: center;
-      font-size: 1.2rem;
-      color: #666;
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.5rem;
+      min-width: 120px;
+      box-shadow: var(--shadow);
+    }
+    .stat-num {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
       margin-top: 0.2rem;
-      margin-bottom: 1.5rem;
+      font-weight: 500;
     }
-    .authors {
-      text-align: center;
-      font-size: 0.9rem;
-      color: #999;
-      margin-bottom: 1rem;
-    }
-    .links {
-      text-align: center;
-      margin-bottom: 1rem;
+    .hero-links {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
     }
-    .links a {
-      color: #666;
-      text-decoration: none;
-      font-size: 1.5rem;
-      transition: color 0.2s;
-      white-space: nowrap;
-    }
-    .links a:hover {
-      color: #0066cc;
-    }
-    .section {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 0 1rem 2rem;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .section h2 {
-      margin-top: 2rem;
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #333;
-    }
-    .section p, .section code {
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
-    .leaderboard-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1.5rem;
-      overflow-x: auto;
-      display: block;
-    }
-    .leaderboard-table th, .leaderboard-table td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid #e0e0e0;
-      white-space: nowrap;
-    }
-    .leaderboard-table th {
-      background-color: #f0f0f0;
-      font-weight: 600;
-      cursor: pointer;
-      user-select: none;
-    }
-    .leaderboard-table th:hover {
-      background-color: #e0e0e0;
-    }
-    .leaderboard-table th.sort-asc::after {
-      content: " ▲";
-      font-size: 0.8em;
-    }
-    .leaderboard-table th.sort-desc::after {
-      content: " ▼";
-      font-size: 0.8em;
-    }
-    .model-name {
-      font-family: 'Courier New', monospace;
-    }
-    .model-name a {
-      color: #0066cc;
-      text-decoration: none;
-    }
-    .model-name a:hover {
-      text-decoration: underline;
-    }
-    .star-note {
-      color: #666;
-      font-size: 0.9rem;
-      margin-top: 0.5rem;
-    }
-    .chart-container {
-      background: white;
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
+    .hero-link {
+      display: inline-flex;
       align-items: center;
-      width: 100%;
-      box-sizing: border-box;
+      gap: 0.4rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.15s;
     }
-    .chart-container h2 {
-      align-self: flex-start;
-      margin-bottom: 1rem;
-      width: 100%;
+    .hero-link.primary {
+      background: var(--accent);
+      color: white;
+      border: 1px solid var(--accent);
     }
-    #scatter-chart {
+    .hero-link.primary:hover { background: var(--accent-hover); }
+    .hero-link.secondary {
+      background: white;
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .hero-link.secondary:hover { background: var(--bg-alt); }
+
+    /* ── SECTIONS ── */
+    .section { padding: 3.5rem 1.5rem; }
+    .section.alt { background: var(--bg-alt); }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-header {
       display: flex;
-      justify-content: center;
-      width: 100%;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .section-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .section-note {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+    }
+
+    /* ── TOGGLE BUTTONS ── */
+    .toggle-group {
+      display: inline-flex;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 3px;
+      gap: 2px;
+    }
+    .toggle-btn {
+      padding: 0.35rem 0.9rem;
+      border-radius: calc(var(--radius) - 2px);
+      border: none;
+      background: transparent;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .toggle-btn:hover { color: var(--text); background: white; }
+    .toggle-btn.active {
+      background: white;
+      color: var(--accent);
+      box-shadow: var(--shadow);
+    }
+
+    /* ── CHART ── */
+    .chart-wrap {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
       overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 0;
     }
-    #scatter-chart svg {
-      min-width: 800px;
-      max-width: 100%;
-      height: auto;
-      margin: 0;
-    }
+    .chart-wrap svg { display: block; min-width: 600px; max-width: 100%; }
     .tooltip {
-      position: absolute;
-      background-color: white;
-      border: 1px solid #ccc;
-      padding: 8px;
-      font-size: 12px;
+      position: fixed;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      line-height: 1.6;
       pointer-events: none;
       opacity: 0;
+      box-shadow: var(--shadow-md);
+      z-index: 200;
+      max-width: 220px;
     }
-    .citation-box {
-      background-color: #f8f9fa;
-      border: 1px solid #e9ecef;
-      border-radius: 4px;
-      padding: 1rem;
-      margin: 1rem 0;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
+    .tooltip strong { display: block; margin-bottom: 4px; }
+
+    /* ── LEADERBOARD TABLE ── */
+    .table-wrap {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
       overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+    thead th {
+      background: var(--bg-alt);
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      text-align: left;
+      transition: background 0.15s;
       position: relative;
     }
-    .copy-button {
+    thead th:hover { background: #EEF2FF; color: var(--accent); }
+    thead th.sorted { background: var(--accent-light); color: var(--accent); }
+    thead th .sort-icon {
+      margin-left: 4px;
+      opacity: 0.5;
+      font-size: 0.7em;
+    }
+    thead th.sorted .sort-icon { opacity: 1; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #FAFBFF; }
+    tbody td { padding: 0.65rem 1rem; }
+    .rank-cell {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+    .rank-cell.top { color: var(--accent); }
+    .model-cell a {
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .model-cell a:hover { color: var(--accent); text-decoration: underline; }
+    .model-tag {
+      display: inline-block;
+      margin-left: 0.4rem;
+      font-size: 0.7rem;
+      background: #FEF3C7;
+      color: #92400E;
+      border-radius: 3px;
+      padding: 0 4px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+    .metric-cell {
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-align: right;
+      padding-right: 1.25rem;
+    }
+    .cost-cell { color: var(--text-muted); font-size: 0.85rem; text-align: right; padding-right: 1.25rem; }
+    .date-cell { color: var(--text-muted); font-size: 0.82rem; }
+
+    /* heat color cells */
+    .heat { border-radius: 3px; padding: 2px 6px; }
+
+    /* ── PROBLEM BUTTONS ── */
+    .problem-selector {
+      margin-bottom: 1.5rem;
+    }
+    .domain-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      margin-top: 1rem;
+    }
+    .domain-label:first-child { margin-top: 0; }
+    .problem-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .problem-btn {
+      padding: 0.45rem 0.85rem;
+      border-radius: 2rem;
+      border: 1.5px solid var(--border);
+      background: white;
+      font-size: 0.825rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .problem-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .problem-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+    }
+
+    /* ── PER-PROBLEM CHART ── */
+    .prob-chart {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    .prob-chart-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.55rem;
+    }
+    .bar-model {
+      width: 150px;
+      text-align: right;
+      font-size: 0.825rem;
+      font-weight: 500;
+      color: var(--text);
+      flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bar-track {
+      flex: 1;
+      height: 22px;
+      background: var(--bg-alt);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+      min-width: 2px;
+    }
+    .bar-val {
+      width: 46px;
+      text-align: left;
+      font-size: 0.8rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* ── SOLVE METRICS TABLE ── */
+    thead th[colspan] { text-align: center; }
+    .center { text-align: center !important; padding-right: 1rem !important; }
+
+    /* ── CITATION ── */
+    .citation-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      position: relative;
+    }
+    .citation-code {
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: #374151;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+    .copy-btn {
       position: absolute;
       top: 1rem;
       right: 1rem;
-      padding: 0.25rem 0.5rem;
-      background-color: #e9ecef;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
+      padding: 0.35rem 0.7rem;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 0.375rem;
+      font-size: 0.78rem;
+      font-weight: 500;
       cursor: pointer;
-      font-size: 0.8rem;
-      transition: background-color 0.2s;
+      transition: all 0.15s;
+      font-family: inherit;
+      color: var(--text-muted);
     }
-    .copy-button:hover {
-      background-color: #dee2e6;
-    }
-    .citation-box code {
-      display: block;
-      padding: 0.5rem;
-      background-color: #fff;
-      border: 1px solid #dee2e6;
-      border-radius: 3px;
-    }
-    .temperature-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 1rem;
-    }
-    .temp-btn {
-      padding: 0.5rem 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      background-color: white;
-      cursor: pointer;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-    .temp-btn:hover {
-      background-color: #f0f0f0;
-    }
-    .temp-btn.active {
-      background-color: #0066cc;
-      color: white;
-      border-color: #0066cc;
-    }
-    .leaderboard-table th[colspan] {
-      text-align: center;
-    }
-    .leaderboard-table th[data-column] {
-      text-align: center;
-    }
-    .leaderboard-table td {
-      text-align: center;
-    }
-    .leaderboard-table td.model-name {
-      text-align: left;
-    }
+    .copy-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); background: var(--green-bg); }
 
-    /* Media queries for responsive design */
-    @media screen and (max-width: 768px) {
-      .header {
-        font-size: 2rem;
-        padding: 1.5rem 1rem 0.5rem;
-      }
-      .subheader {
-        font-size: 1rem;
-        padding: 0 1rem;
-      }
-      .section {
-        padding: 0 1rem 1rem;
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .chart-container {
-        padding: 1rem 0;
-        width: 100%;
-        box-sizing: border-box;
-      }
-      .leaderboard-table {
-        width: 100%;
-        margin: 1.5rem 0;
-      }
-      .leaderboard-table th, .leaderboard-table td {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.9rem;
-      }
-      .links {
-        padding: 0 1rem;
-        gap: 1rem;
-      }
-      .links a {
-        font-size: 1.2rem;
-      }
-      .temp-btn {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
-      }
-      #scatter-chart {
-        width: 100%;
-        padding: 0;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        justify-content: flex-start;
-      }
-      #scatter-chart svg {
-        min-width: 800px;
-        max-width: none;
-        margin: 0;
-      }
-      .citation-box {
-        margin: 1rem;
-      }
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg-alt);
+      border-top: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
     }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--accent); }
 
-    @media screen and (max-width: 480px) {
-      .header {
-        font-size: 1.5rem;
-        padding: 1rem 1rem 0.5rem;
-      }
-      .subheader {
-        font-size: 0.9rem;
-        padding: 0 1rem;
-      }
-      .section {
-        padding: 0 1rem 1rem;
-      }
-      .chart-container {
-        padding: 1rem 0;
-      }
-      .links {
-        padding: 0 1rem;
-        gap: 0.75rem;
-      }
-      .links a {
-        font-size: 1rem;
-      }
-      .temperature-buttons {
-        gap: 0.5rem;
-        padding: 0 1rem;
-      }
-      .temp-btn {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.8rem;
-      }
-      .leaderboard-table th, .leaderboard-table td {
-        padding: 0.5rem;
-      }
-      .citation-box {
-        margin: 1rem;
-      }
-      p {
-        padding: 0 1rem;
-      }
-      #scatter-chart {
-        width: 100%;
-        padding: 0;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        justify-content: flex-start;
-      }
-      #scatter-chart svg {
-        min-width: 800px;
-        max-width: none;
-        margin: 0;
-      }
-    }
-
-    /* Media query for screens where plot needs to be scrollable */
-    @media screen and (max-width: 900px) {
-      #scatter-chart {
-        justify-content: flex-start;
-      }
-      #scatter-chart svg {
-        max-width: none;
-      }
+    /* ── MOBILE ── */
+    @media (max-width: 640px) {
+      .stats-row { gap: 0.75rem; }
+      .stat-card { padding: 0.75rem 1rem; }
+      .nav-links { display: none; }
+      .bar-model { width: 110px; }
+      .problem-btn { font-size: 0.775rem; padding: 0.4rem 0.7rem; }
     }
   </style>
 </head>
 <body>
-  <div class="header">HeuriGym Leaderboard</div>
-  <div class="subheader">An Agentic Benchmark for LLM-Crafted Heuristics in Combinatorial Optimization</div>
-  <div class="links">
-    <a href="https://github.com/cornell-zhang/heurigym" target="_blank" title="GitHub"><i class="fab fa-github"></i> Github</a>
-    <a href="https://arxiv.org/abs/2506.07972" target="_blank" title="arXiv"><svg id="logomark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17.732 24.269" width="22" height="22" style="vertical-align: middle; margin-right: 2px;"><g id="tiny"><path d="M573.549,280.916l2.266,2.738,6.674-7.84c.353-.47.52-.717.353-1.117a1.218,1.218,0,0,0-1.061-.748h0a.953.953,0,0,0-.712.262Z" transform="translate(-566.984 -271.548)" fill="#bdb9b4"/><path d="M579.525,282.225l-10.606-10.174a1.413,1.413,0,0,0-.834-.5,1.09,1.09,0,0,0-1.027.66c-.167.4-.047.681.319,1.206l8.44,10.242h0l-6.282,7.716a1.336,1.336,0,0,0-.323,1.3,1.114,1.114,0,0,0,1.04.69A.992.992,0,0,0,571,293l8.519-7.92A1.924,1.924,0,0,0,579.525,282.225Z" transform="translate(-566.984 -271.548)" fill="#b31b1b"/><path d="M584.32,293.912l-8.525-10.275,0,0L573.53,280.9l-1.389,1.254a2.063,2.063,0,0,0,0,2.965l10.812,10.419a.925.925,0,0,0,.742.282,1.039,1.039,0,0,0,.953-.667A1.261,1.261,0,0,0,584.32,293.912Z" transform="translate(-566.984 -271.548)" fill="#bdb9b4"/></g></svg> ArXiv</a>
-    <a href="https://huggingface.co/datasets/heurigen/heurigen-data" target="_blank" title="Hugging Face">🤗 Dataset</a>
-  </div>
 
-  <div class="section chart-container">
-    <h2>📈 Overall Performance</h2>
-    <div class="temperature-buttons" style="margin-bottom: 1rem;">
-      <button class="temp-btn active" data-temp="0">T=0</button>
-      <button class="temp-btn" data-temp="0.5">T=0.5</button>
-      <button class="temp-btn" data-temp="1.0">T=1.0</button>
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="#home">Heuri<span>Gym</span></a>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#leaderboard">Leaderboard</a></li>
+    <li><a href="#problems">Per-Problem</a></li>
+    <li><a href="#solve-metrics">Solve Metrics</a></li>
+    <li><a href="#citation">Citation</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-badge">ICLR 2026 Benchmark</div>
+  <h1>Heuri<span>Gym</span> Leaderboard</h1>
+  <p>An agentic benchmark for evaluating how well LLMs generate and refine heuristics for real-world combinatorial optimization tasks.</p>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-num">19</div><div class="stat-label">Models Evaluated</div></div>
+    <div class="stat-card"><div class="stat-num">9</div><div class="stat-label">Problems</div></div>
+    <div class="stat-card"><div class="stat-num">4</div><div class="stat-label">Domains</div></div>
+    <div class="stat-card"><div class="stat-num">218</div><div class="stat-label">Test Cases</div></div>
+  </div>
+  <div class="hero-links">
+    <a class="hero-link primary" href="https://github.com/cornell-zhang/heurigym" target="_blank"><i class="fab fa-github"></i> GitHub</a>
+    <a class="hero-link secondary" href="https://arxiv.org/abs/2506.07972" target="_blank">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17.732 24.269" width="16" height="16" style="vertical-align:middle"><g><path d="M573.549,280.916l2.266,2.738,6.674-7.84c.353-.47.52-.717.353-1.117a1.218,1.218,0,0,0-1.061-.748h0a.953.953,0,0,0-.712.262Z" transform="translate(-566.984 -271.548)" fill="#bdb9b4"/><path d="M579.525,282.225l-10.606-10.174a1.413,1.413,0,0,0-.834-.5,1.09,1.09,0,0,0-1.027.66c-.167.4-.047.681.319,1.206l8.44,10.242h0l-6.282,7.716a1.336,1.336,0,0,0-.323,1.3,1.114,1.114,0,0,0,1.04.69A.992.992,0,0,0,571,293l8.519-7.92A1.924,1.924,0,0,0,579.525,282.225Z" transform="translate(-566.984 -271.548)" fill="#b31b1b"/><path d="M584.32,293.912l-8.525-10.275,0,0L573.53,280.9l-1.389,1.254a2.063,2.063,0,0,0,0,2.965l10.812,10.419a.925.925,0,0,0,.742.282,1.039,1.039,0,0,0,.953-.667A1.261,1.261,0,0,0,584.32,293.912Z" transform="translate(-566.984 -271.548)" fill="#bdb9b4"/></g></svg>
+      ArXiv
+    </a>
+    <a class="hero-link secondary" href="https://huggingface.co/datasets/heurigen/heurigen-data" target="_blank">🤗 Dataset</a>
+  </div>
+</section>
+
+<!-- OVERVIEW -->
+<section class="section" id="overview">
+  <div class="container">
+    <div class="section-header">
+      <h2>Overall Performance</h2>
+      <div class="toggle-group" id="temp-toggle">
+        <button class="toggle-btn active" data-temp="0">T = 0</button>
+        <button class="toggle-btn" data-temp="0.5">T = 0.5</button>
+        <button class="toggle-btn" data-temp="1.0">T = 1.0</button>
+      </div>
     </div>
-    <div id="scatter-chart"></div>
-    <p style="color: #666; font-size: 0.9rem; margin-top: 1rem; text-align: left;">
-      Note: Yield and QYI values are weighted across the problem sets. Quality is calculated as (QYI * Yield) / (2 * Yield - QYI) since weighted QYI is not the harmonic mean of weighted Yield and weighted Quality.
-    </p>
+    <div class="chart-wrap">
+      <div id="scatter-chart"></div>
+    </div>
+    <p class="section-note">Yield and QYI values are weighted across the 9 problem sets by test case count. Quality is back-calculated from weighted QYI and weighted Yield via QYI = 2QY/(Q+Y).</p>
   </div>
+</section>
 
-  <div class="section">
-    <h2>📊 Leaderboard (<span id="current-temp">T=0</span>)</h2>
-    <table class="leaderboard-table" id="leaderboard">
-      <thead>
-        <tr>
-          <th data-column="Rank">Rank</th>
-          <th data-column="Model">Model</th>
-          <th data-column="Weighted_Yield">Weighted Yield</th>
-          <th data-column="Weighted_Quality">Weighted Quality</th>
-          <th data-column="Weighted_QYI">Weighted QYI</th>
-          <th data-column="Cost">Cost ($)</th>
-          <th data-column="Release_Date">Release Date</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <p style="color: #666; font-size: 0.9rem; margin-top: 1rem;">
-      Note: All Yield, Quality, and QYI values are weighted across the problem sets in this table.
-    </p>
-    <p class="star-note">
-      * GPT-o4-mini:high was measured under T=1 since o-series models only support T=1.
-    </p>
-
-    <h2>📊 solve<sub>s</sub>@i Metrics (T=0)</h2>
-    <table class="leaderboard-table" id="solve-metrics">
-      <thead>
-        <tr>
-          <th rowspan="2" data-column="Model">Model</th>
-          <th colspan="3">Stage 3 (Verification)</th>
-          <th colspan="3">Stage 2 (Solution Gen.)</th>
-          <th colspan="3">Stage 1 (Execution)</th>
-        </tr>
-        <tr>
-          <th data-column="solve@10 stage3" class="sort-desc">@10</th>
-          <th data-column="solve@5 stage3">@5</th>
-          <th data-column="solve@1 stage3">@1</th>
-          <th data-column="solve@10 stage2">@10</th>
-          <th data-column="solve@5 stage2">@5</th>
-          <th data-column="solve@1 stage2">@1</th>
-          <th data-column="solve@10 stage1">@10</th>
-          <th data-column="solve@5 stage1">@5</th>
-          <th data-column="solve@1 stage1">@1</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <h2>📚 Citation</h2>
-    <div class="citation-box">@article{chen2025heurigym,
-    title={HeuriGym: An Agentic Benchmark for LLM-Crafted Heuristics in Combinatorial Optimization},
-    author={Hongzheng Chen and Yingheng Wang and Yaohui Cai and Hins Hu and Jiajie Li and Shirley Huang and Chenhui Deng and Rongjian Liang and Shufeng Kong and Haoxing Ren and Samitha Samaranayake and Carla P. Gomes and Zhiru Zhang},
-    journal={arXiv preprint arXiv:2506.07972},
-    year={2025}
-}<button class="copy-button" onclick="copyCitation()">Copy</button></div>
+<!-- LEADERBOARD -->
+<section class="section alt" id="leaderboard">
+  <div class="container">
+    <div class="section-header">
+      <h2>Leaderboard <span id="lb-temp-label" style="color:var(--text-muted);font-weight:400;font-size:1rem">(T = 0)</span></h2>
+      <div class="toggle-group" id="lb-temp-toggle">
+        <button class="toggle-btn active" data-temp="0">T = 0</button>
+        <button class="toggle-btn" data-temp="0.5">T = 0.5</button>
+        <button class="toggle-btn" data-temp="1.0">T = 1.0</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="lb-table">
+        <thead>
+          <tr>
+            <th data-col="rank">#</th>
+            <th data-col="Model">Model</th>
+            <th data-col="Weighted_QYI" class="sorted">QYI ↕<span class="sort-icon">▼</span></th>
+            <th data-col="Weighted_Yield">Yield ↕<span class="sort-icon"></span></th>
+            <th data-col="Weighted_Quality">Quality ↕<span class="sort-icon"></span></th>
+            <th data-col="Cost">Cost ($) ↕<span class="sort-icon"></span></th>
+            <th data-col="Release_Date">Released ↕<span class="sort-icon"></span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="section-note">* GPT-o4-mini:high is measured at T=1 (o-series only supports T=1); its values appear in all temperature views unchanged.</p>
   </div>
+</section>
 
-  <script>
-    const width = 800, height = 400, margin = { top: 20, right: 60, bottom: 50, left: 60 };
-    let currentTemperature = 0;
-    let performanceData = null;
-    let metadata = null;
+<!-- PER-PROBLEM -->
+<section class="section" id="problems">
+  <div class="container">
+    <div class="section-header">
+      <h2>Per-Problem Results</h2>
+    </div>
 
-    // Function to load data for a specific temperature
-    async function loadData(temperature) {
-      const tempFile = `results/overall_qyi_t${temperature}.csv`;
-      try {
-        performanceData = await d3.csv(tempFile);
-        updateVisualization();
-      } catch (error) {
-        console.error(`Error loading data for temperature ${temperature}:`, error);
-        // If data file doesn't exist, show a message
-        if (error.status === 404) {
-          alert(`Data for temperature ${temperature} is not available yet.`);
-          // Reset to previous temperature
-          const prevTemp = currentTemperature;
-          currentTemperature = temperature;
-          updateTemperatureButtons();
-          currentTemperature = prevTemp;
-          updateTemperatureButtons();
-        }
-      }
-    }
+    <div class="problem-selector">
+      <div class="domain-label">EDA</div>
+      <div class="problem-btns" id="btns-eda"></div>
+      <div class="domain-label">Compilers</div>
+      <div class="problem-btns" id="btns-compilers"></div>
+      <div class="domain-label">Computational Biology</div>
+      <div class="problem-btns" id="btns-compbio"></div>
+      <div class="domain-label">Logistics</div>
+      <div class="problem-btns" id="btns-logistics"></div>
+    </div>
 
-    // Function to update the visualization
-    function updateVisualization() {
-      if (!performanceData || !metadata) return;
+    <div class="prob-chart" id="prob-bars">
+      <div class="prob-chart-title">QYI by Model — <span id="prob-chart-title">Operator Scheduling</span></div>
+      <div id="bar-chart-inner"></div>
+    </div>
 
-      // Clear existing visualization
-      d3.select("#scatter-chart svg").remove();
-      
-      // Create new SVG
-      const svg = d3.select("#scatter-chart")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height);
+    <div class="table-wrap">
+      <table id="prob-table">
+        <thead>
+          <tr>
+            <th style="text-align:left">Model</th>
+            <th class="center" data-prob-col="QYI">QYI ↕<span class="sort-icon">▼</span></th>
+            <th class="center" data-prob-col="Yield">Yield ↕<span class="sort-icon"></span></th>
+            <th class="center" data-prob-col="Quality">Quality ↕<span class="sort-icon"></span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="section-note">Per-problem breakdown available for 10 recently evaluated models (5 iterations, T=0). Data for earlier models is available in the overall leaderboard above.</p>
+  </div>
+</section>
 
-      const x = d3.scaleLinear().domain([0.2, 1]).range([margin.left, width - margin.right]);
-      const y = d3.scaleLinear().domain([0.2, 1]).range([height - margin.bottom, margin.top]);
+<!-- SOLVE METRICS -->
+<section class="section alt" id="solve-metrics">
+  <div class="container">
+    <div class="section-header">
+      <h2>Solve Metrics (T = 0)</h2>
+    </div>
+    <div class="table-wrap">
+      <table id="solve-table">
+        <thead>
+          <tr>
+            <th rowspan="2" style="text-align:left;vertical-align:bottom">Model</th>
+            <th colspan="3" style="text-align:center;border-bottom:1px solid var(--border)">Stage III — Validity</th>
+            <th colspan="3" style="text-align:center;border-bottom:1px solid var(--border)">Stage II — Output Gen.</th>
+            <th colspan="3" style="text-align:center;border-bottom:1px solid var(--border)">Stage I — Execution</th>
+          </tr>
+          <tr>
+            <th class="center" data-solve-col="solve@10 stage3">@10<span class="sort-icon"> ▼</span></th>
+            <th class="center" data-solve-col="solve@5 stage3">@5<span class="sort-icon"></span></th>
+            <th class="center" data-solve-col="solve@1 stage3">@1<span class="sort-icon"></span></th>
+            <th class="center" data-solve-col="solve@10 stage2">@10<span class="sort-icon"></span></th>
+            <th class="center" data-solve-col="solve@5 stage2">@5<span class="sort-icon"></span></th>
+            <th class="center" data-solve-col="solve@1 stage2">@1<span class="sort-icon"></span></th>
+            <th class="center" data-solve-col="solve@10 stage1">@10<span class="sort-icon"></span></th>
+            <th class="center" data-solve-col="solve@5 stage1">@5<span class="sort-icon"></span></th>
+            <th class="center" data-solve-col="solve@1 stage1">@1<span class="sort-icon"></span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="section-note">solve<sub>s</sub>@i: fraction of test cases solved at Stage s within i attempts. Stage I = no crash, Stage II = parseable output, Stage III = valid solution (≡ Yield).</p>
+  </div>
+</section>
 
-      // Add grid lines
-      const xGrid = d3.axisBottom(x)
-        .ticks(10)
-        .tickSize(-(height - margin.top - margin.bottom))
-        .tickFormat("");
-
-      const yGrid = d3.axisLeft(y)
-        .ticks(10)
-        .tickSize(-(width - margin.left - margin.right))
-        .tickFormat("");
-
-      svg.append("g")
-        .attr("class", "grid")
-        .attr("transform", `translate(0,${height - margin.bottom})`)
-        .call(xGrid)
-        .attr("stroke", "#e0e0e0")
-        .attr("stroke-opacity", 0.3)
-        .attr("stroke-dasharray", "2,2");
-
-      svg.append("g")
-        .attr("class", "grid")
-        .attr("transform", `translate(${margin.left},0)`)
-        .call(yGrid)
-        .attr("stroke", "#e0e0e0")
-        .attr("stroke-opacity", 0.3)
-        .attr("stroke-dasharray", "2,2");
-
-      svg.append("g")
-        .attr("transform", `translate(0,${height - margin.bottom})`)
-        .call(d3.axisBottom(x))
-        .append("text")
-        .attr("x", width / 2)
-        .attr("y", 40)
-        .attr("fill", "black")
-        .attr("text-anchor", "middle")
-        .attr("font-size", "14px")
-        .text("Weighted Yield");
-
-      svg.append("g")
-        .attr("transform", `translate(${margin.left},0)`)
-        .call(d3.axisLeft(y))
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("x", -height / 2)
-        .attr("y", -40)
-        .attr("fill", "black")
-        .attr("text-anchor", "middle")
-        .attr("font-size", "14px")
-        .text("Quality");
-
-      // Style the axis ticks
-      svg.selectAll(".tick text")
-        .attr("font-size", "12px");
-
-      const tooltip = d3.select("body")
-        .append("div")
-        .attr("class", "tooltip");
-
-      const qyiLevels = [0.8, 0.6, 0.4];
-      
-      qyiLevels.forEach(qyi => {
-        const curve = d3.range(0.01, 1.01, 0.01).map(yieldVal => {
-          const qualityVal = (qyi * yieldVal) / (2 * yieldVal - qyi);
-          return qualityVal >= 0 && qualityVal <= 1 ? [yieldVal, qualityVal] : null;
-        }).filter(d => d);
-
-        svg.append("path")
-          .datum(curve)
-          .attr("fill", "none")
-          .attr("stroke", "#aaa")
-          .attr("stroke-dasharray", "4 2")
-          .attr("stroke-width", 1)
-          .attr("d", d3.line().x(d => x(d[0])).y(d => y(d[1])));
-
-        svg.append("text")
-          .attr("x", x(curve[curve.length - 1][0]) - 10)
-          .attr("y", y(curve[curve.length - 1][1]) + 5)
-          .text(`QYI=${qyi}`)
-          .attr("font-size", "14px")
-          .attr("fill", "#777");
-      });
-
-      // Combine the data
-      const data = performanceData.map(d => {
-        const meta = metadata.find(m => m.Model === d.Model);
-        const originalQuality = +d.Weighted_Quality;
-        const yield = +d.Weighted_Yield;
-        const qyi = +d.Weighted_QYI;
-        // Calculate quality for scatter plot using the formula
-        const calculatedQuality = (qyi * yield) / (2 * yield - qyi);
-        return {
-          ...d,
-          Weighted_Yield: yield,
-          Weighted_Quality: originalQuality, // Keep original quality for table
-          Calculated_Quality: calculatedQuality, // Add calculated quality for scatter plot
-          Weighted_QYI: qyi,
-          Cost: +d.Cost,
-          URL: meta ? meta.URL : "#",
-          Release_Date: meta ? new Date(meta.Release_Date) : new Date()
-        };
-      });
-
-      let currentSort = { column: 'Weighted_QYI', direction: 'desc' };
-
-      function sortData() {
-        data.sort((a, b) => {
-          let comparison = 0;
-          if (currentSort.column === 'Model') {
-            comparison = a[currentSort.column].localeCompare(b[currentSort.column]);
-          } else if (currentSort.column === 'Release_Date') {
-            comparison = a[currentSort.column] - b[currentSort.column];
-          } else {
-            comparison = a[currentSort.column] - b[currentSort.column];
-          }
-          return currentSort.direction === 'asc' ? comparison : -comparison;
-        });
-        updateTable();
-      }
-
-      function updateTable() {
-        const tbody = d3.select("#leaderboard tbody");
-        tbody.selectAll("tr").remove();
-        
-        data.forEach((d, i) => {
-          const row = tbody.append("tr");
-          row.append("td").text(i + 1);
-          const modelCell = row.append("td").attr("class", "model-name");
-          const modelLink = modelCell.append("a")
-            .attr("href", d.URL)
-            .attr("target", "_blank")
-            .text(d.Model);
-          if (d.Model === "GPT-o4-mini:high") {
-            modelLink.append("span").text("*");
-          }
-          row.append("td").text(d.Weighted_Yield.toFixed(3));
-          row.append("td").text(d.Weighted_Quality.toFixed(3));
-          row.append("td").text(d.Weighted_QYI.toFixed(3));
-          row.append("td").text(d.Cost.toFixed(2));
-          row.append("td").text(d.Release_Date.toLocaleDateString());
-        });
-      }
-
-      // Add click handlers to table headers
-      d3.selectAll("#leaderboard th").on("click", function() {
-        const column = this.getAttribute("data-column");
-        if (currentSort.column === column) {
-          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-          currentSort.column = column;
-          currentSort.direction = 'asc';
-        }
-        
-        // Update sort indicators
-        d3.selectAll("#leaderboard th")
-          .classed("sort-asc", false)
-          .classed("sort-desc", false);
-        d3.select(this)
-          .classed(`sort-${currentSort.direction}`, true);
-        
-        sortData();
-      });
-
-      // Initial sort
-      sortData();
-
-      const color = d3.scaleOrdinal(d3.schemeTableau10)
-        .domain(data.map(d => d.Model));
-
-      svg.selectAll("circle")
-        .data(data)
-        .enter()
-        .append("circle")
-        .attr("cx", d => x(d.Weighted_Yield))
-        .attr("cy", d => y(d.Calculated_Quality)) // Use calculated quality for y-position
-        .attr("r", 6)
-        .style("fill", d => color(d.Model))
-        .style("stroke", "#333")
-        .on("mouseover", function (event, d) {
-          tooltip.transition().duration(100).style("opacity", 1);
-          tooltip.html(`<strong>${d.Model}</strong><br>Weighted Yield: ${d.Weighted_Yield.toFixed(3)}<br>Weighted Quality: ${d.Weighted_Quality.toFixed(3)}<br>Weighted QYI: ${d.Weighted_QYI.toFixed(3)}`)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY - 28) + "px");
-        })
-        .on("mouseout", function () {
-          tooltip.transition().duration(200).style("opacity", 0);
-        });
-
-      // Update the leaderboard title
-      document.getElementById("current-temp").textContent = `T=${currentTemperature}`;
-    }
-
-    // Function to update temperature buttons
-    function updateTemperatureButtons() {
-      document.querySelectorAll('.temp-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.temp == currentTemperature);
-      });
-    }
-
-    // Add click handlers for temperature buttons
-    document.querySelectorAll('.temp-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const newTemp = parseFloat(btn.dataset.temp);
-        if (newTemp !== currentTemperature) {
-          currentTemperature = newTemp;
-          updateTemperatureButtons();
-          // Update the leaderboard title immediately
-          document.getElementById("current-temp").textContent = `T=${currentTemperature}`;
-          loadData(currentTemperature);
-        }
-      });
-    });
-
-    // Initial data loading
-    d3.csv("results/model_metadata.csv").then(data => {
-      metadata = data;
-      loadData(currentTemperature);
-      loadSolveMetrics();
-    });
-
-    function loadSolveMetrics() {
-      d3.csv("results/solve_metrics_summary.csv").then(data => {
-        const tbody = d3.select("#solve-metrics tbody");
-        tbody.selectAll("tr").remove();
-        
-        // Sort data by stage 3@10 by default
-        data.sort((a, b) => d3.descending(+a["solve@10 stage3"], +b["solve@10 stage3"]));
-        
-        // Store the data in a variable accessible to the click handler
-        window.solveMetricsData = data;
-        
-        function updateTable(sortedData) {
-          tbody.selectAll("tr").remove();
-          
-          sortedData.forEach(d => {
-            const row = tbody.append("tr");
-            const modelCell = row.append("td").attr("class", "model-name");
-            const modelLink = modelCell.append("a")
-              .attr("href", metadata.find(m => m.Model === d.Model)?.URL || "#")
-              .attr("target", "_blank")
-              .text(d.Model);
-            
-            // Add all solve metrics with percentage formatting
-            const metrics = [
-              "solve@10 stage3", "solve@5 stage3", "solve@1 stage3",
-              "solve@10 stage2", "solve@5 stage2", "solve@1 stage2",
-              "solve@10 stage1", "solve@5 stage1", "solve@1 stage1"
-            ];
-            
-            metrics.forEach(metric => {
-              row.append("td").text((d[metric] * 100).toFixed(2) + "%");
-            });
-          });
-        }
-
-        // Initial table render
-        updateTable(data);
-
-        // Add click handlers to table headers
-        d3.selectAll("#solve-metrics th[data-column]").on("click", function() {
-          const column = this.getAttribute("data-column");
-          const isAscending = this.classList.contains("sort-asc");
-          
-          // Sort the data
-          const sortedData = [...window.solveMetricsData].sort((a, b) => {
-            if (column === "Model") {
-              return isAscending ? 
-                b[column].localeCompare(a[column]) : 
-                a[column].localeCompare(b[column]);
-            }
-            return isAscending ? 
-              d3.descending(+a[column], +b[column]) : 
-              d3.ascending(+a[column], +b[column]);
-          });
-          
-          // Update sort indicators
-          d3.selectAll("#solve-metrics th")
-            .classed("sort-asc", false)
-            .classed("sort-desc", false);
-          d3.select(this)
-            .classed(isAscending ? "sort-desc" : "sort-asc", true);
-          
-          // Update the table with sorted data
-          updateTable(sortedData);
-        });
-      });
-    }
-
-    function copyCitation() {
-      const citationText = `@article{chen2025heurigym,
+<!-- CITATION -->
+<section class="section" id="citation">
+  <div class="container">
+    <div class="section-header"><h2>Citation</h2></div>
+    <div class="citation-card">
+      <button class="copy-btn" id="copy-btn" onclick="copyCitation()">Copy</button>
+      <pre class="citation-code">@article{chen2025heurigym,
   title={HeuriGym: An Agentic Benchmark for LLM-Crafted Heuristics in Combinatorial Optimization},
-  author={Hongzheng Chen and Yingheng Wang and Yaohui Cai and Hins Hu and Jiajie Li and Shirley Huang and Chenhui Deng and Rongjian Liang and Shufeng Kong and Haoxing Ren and Samitha Samaranayake and Carla P. Gomes and Zhiru Zhang},
+  author={Hongzheng Chen and Yingheng Wang and Yaohui Cai and Hins Hu and Jiajie Li
+          and Shirley Huang and Chenhui Deng and Rongjian Liang and Shufeng Kong
+          and Haoxing Ren and Samitha Samaranayake and Carla P. Gomes and Zhiru Zhang},
   journal={arXiv preprint arXiv:2506.07972},
   year={2025}
-}`;
-      navigator.clipboard.writeText(citationText).then(() => {
-        const button = document.querySelector('.copy-button');
-        const originalText = button.textContent;
-        button.textContent = 'Copied!';
-        setTimeout(() => {
-          button.textContent = originalText;
-        }, 2000);
-      });
-    }
-  </script>
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>HeuriGym &mdash; ICLR 2026 &mdash; <a href="https://zhang.ece.cornell.edu/" target="_blank">Cornell University</a> &amp; <a href="https://www.nvidia.com/en-us/research/" target="_blank">NVIDIA Research</a></p>
+</footer>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ── DATA & STATE ──────────────────────────────────────────────────────────────
+const PROBLEMS = [
+  { key: "operator_scheduling",          label: "Operator Scheduling",        domain: "eda" },
+  { key: "technology_mapping",           label: "Technology Mapping",         domain: "eda" },
+  { key: "global_routing",               label: "Global Routing",             domain: "eda" },
+  { key: "egraph_extraction",            label: "E-Graph Extraction",         domain: "compilers" },
+  { key: "intra_op_parallel",            label: "Intra-Op Parallelism",       domain: "compilers" },
+  { key: "protein_sequence_design",      label: "Protein Seq. Design",        domain: "compbio" },
+  { key: "pedigree",                     label: "Mendelian Error Detection",  domain: "compbio" },
+  { key: "crew_pairing",                 label: "Airline Crew Pairing",       domain: "logistics" },
+  { key: "pickup_delivery_time_windows", label: "Pickup & Delivery TW",       domain: "logistics" },
+];
+
+let lbData = [], metadata = [], perProblemData = [], solveData = [];
+let currentTemp = 0;
+let lbSort = { col: "Weighted_QYI", dir: "desc" };
+let probSort = { col: "QYI", dir: "desc" };
+let solveSort = { col: "solve@10 stage3", dir: "desc" };
+let currentProblem = PROBLEMS[0].key;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function heatColor(v) {
+  if (v <= 0) return "#F1F5F9";
+  const h = v * 120;
+  return `hsla(${h.toFixed(0)},70%,48%,0.22)`;
+}
+function heatText(v) {
+  if (v >= 0.8) return "var(--green)";
+  if (v >= 0.5) return "var(--amber)";
+  return "var(--red)";
+}
+function fmt(v, digits=3) { return (+v).toFixed(digits); }
+function fmtPct(v) { return (v * 100).toFixed(1) + "%"; }
+
+// ── SCATTER PLOT ──────────────────────────────────────────────────────────────
+function drawScatter(data) {
+  const W = 820, H = 420, mg = { top: 24, right: 80, bottom: 52, left: 60 };
+  d3.select("#scatter-chart").selectAll("*").remove();
+  const svg = d3.select("#scatter-chart").append("svg")
+    .attr("width", W).attr("height", H).attr("viewBox", `0 0 ${W} ${H}`)
+    .style("max-width","100%");
+
+  const x = d3.scaleLinear().domain([0.15, 1.02]).range([mg.left, W - mg.right]);
+  const y = d3.scaleLinear().domain([0.15, 1.05]).range([H - mg.bottom, mg.top]);
+  const color = d3.scaleOrdinal(d3.schemeTableau10).domain(data.map(d => d.Model));
+
+  // Grid
+  [x, y].forEach((sc, i) => {
+    const axis = i === 0 ? d3.axisBottom(sc) : d3.axisLeft(sc);
+    svg.append("g").attr("class","grid")
+      .attr("transform", i===0 ? `translate(0,${H-mg.bottom})` : `translate(${mg.left},0)`)
+      .call(axis.ticks(8).tickSize(i===0 ? -(H-mg.top-mg.bottom) : -(W-mg.left-mg.right)).tickFormat(""))
+      .call(g => g.select(".domain").remove())
+      .call(g => g.selectAll("line").attr("stroke","#E2E8F0").attr("stroke-dasharray","3,3"));
+  });
+
+  // Axes
+  svg.append("g").attr("transform",`translate(0,${H-mg.bottom})`).call(d3.axisBottom(x).ticks(8))
+    .call(g => g.select(".domain").attr("stroke","#CBD5E1"))
+    .call(g => g.selectAll("text").attr("font-size","11").attr("fill","#64748B"));
+  svg.append("g").attr("transform",`translate(${mg.left},0)`).call(d3.axisLeft(y).ticks(8))
+    .call(g => g.select(".domain").attr("stroke","#CBD5E1"))
+    .call(g => g.selectAll("text").attr("font-size","11").attr("fill","#64748B"));
+
+  // Axis labels
+  svg.append("text").attr("x",(mg.left+W-mg.right)/2).attr("y",H-8)
+    .attr("text-anchor","middle").attr("font-size","13").attr("fill","#64748B").attr("font-weight","500")
+    .text("Weighted Yield (solve@5 Stage III)");
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-(mg.top+H-mg.bottom)/2).attr("y",14)
+    .attr("text-anchor","middle").attr("font-size","13").attr("fill","#64748B").attr("font-weight","500")
+    .text("Quality");
+
+  // QYI iso-curves
+  [0.9, 0.75, 0.6, 0.45].forEach(q => {
+    const pts = d3.range(0.05,1.01,0.005).map(yld => {
+      const denom = 2*yld - q;
+      if (denom <= 0.001) return null;
+      const qual = q * yld / denom;
+      return (qual >= 0 && qual <= 1.1) ? [yld, qual] : null;
+    }).filter(Boolean);
+    if (!pts.length) return;
+    svg.append("path").datum(pts)
+      .attr("fill","none").attr("stroke","#CBD5E1").attr("stroke-dasharray","4,3").attr("stroke-width",1)
+      .attr("d", d3.line().x(d=>x(d[0])).y(d=>y(d[1])));
+    const last = pts[pts.length-1];
+    svg.append("text").attr("x",x(last[0])+4).attr("y",y(last[1])+4)
+      .text(`QYI=${q}`).attr("font-size","10").attr("fill","#94A3B8");
+  });
+
+  // Tooltip
+  const tt = d3.select("#tooltip");
+
+  // Points
+  svg.selectAll("circle").data(data).enter().append("circle")
+    .attr("cx", d => x(+d.Weighted_Yield))
+    .attr("cy", d => {
+      const yld = +d.Weighted_Yield, qyi = +d.Weighted_QYI;
+      const denom = 2*yld - qyi;
+      return y(denom > 0.001 ? qyi*yld/denom : 0);
+    })
+    .attr("r", 6)
+    .attr("fill", d => color(d.Model))
+    .attr("stroke","white").attr("stroke-width",1.5)
+    .style("cursor","pointer")
+    .on("mousemove", function(event, d) {
+      const yld = +d.Weighted_Yield, qyi = +d.Weighted_QYI;
+      const denom = 2*yld - qyi;
+      const qual = denom > 0.001 ? qyi*yld/denom : 0;
+      tt.style("opacity",1)
+        .style("left",(event.clientX+14)+"px").style("top",(event.clientY-12)+"px")
+        .html(`<strong>${d.Model}</strong>QYI: ${fmt(qyi)}<br>Yield: ${fmt(yld)}<br>Quality: ${fmt(+d.Weighted_Quality)}<br>Cost: $${fmt(+d.Cost,2)}`);
+    })
+    .on("mouseleave", () => tt.style("opacity",0));
+}
+
+// ── LEADERBOARD ───────────────────────────────────────────────────────────────
+function renderLeaderboard() {
+  const sorted = [...lbData].sort((a,b) => {
+    const av = lbSort.col === "Model" ? a[lbSort.col] :
+               lbSort.col === "Release_Date" ? new Date(a.Release_Date) - new Date(b.Release_Date) :
+               +a[lbSort.col] - +b[lbSort.col];
+    if (lbSort.col === "Model") return lbSort.dir==="asc" ? a.Model.localeCompare(b.Model) : b.Model.localeCompare(a.Model);
+    const diff = +a[lbSort.col] - +b[lbSort.col];
+    return lbSort.dir === "asc" ? diff : -diff;
+  });
+
+  const tbody = document.querySelector("#lb-table tbody");
+  tbody.innerHTML = "";
+  sorted.forEach((d, i) => {
+    const tr = document.createElement("tr");
+    const meta = metadata.find(m => m.Model === d.Model) || {};
+    const qyi = +d.Weighted_QYI, yld = +d.Weighted_Yield, qual = +d.Weighted_Quality;
+    tr.innerHTML = `
+      <td class="rank-cell ${i<3?'top':''}">${i+1}</td>
+      <td class="model-cell">
+        <a href="${meta.URL||'#'}" target="_blank">${d.Model}</a>
+        ${d.Model==="GPT-o4-mini:high"?'<span class="model-tag">T=1</span>':''}
+      </td>
+      <td class="metric-cell"><span class="heat" style="background:${heatColor(qyi)};color:${heatText(qyi)}">${fmt(qyi)}</span></td>
+      <td class="metric-cell"><span class="heat" style="background:${heatColor(yld)};color:${heatText(yld)}">${fmt(yld)}</span></td>
+      <td class="metric-cell"><span class="heat" style="background:${heatColor(qual)};color:${heatText(qual)}">${fmt(qual)}</span></td>
+      <td class="cost-cell">$${fmt(+d.Cost,2)}</td>
+      <td class="date-cell">${meta.Release_Date||''}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Update sort indicators
+  document.querySelectorAll("#lb-table thead th[data-col]").forEach(th => {
+    const isActive = th.dataset.col === lbSort.col;
+    th.classList.toggle("sorted", isActive);
+    const icon = th.querySelector(".sort-icon");
+    if (icon) icon.textContent = isActive ? (lbSort.dir==="desc"?" ▼":" ▲") : "";
+  });
+}
+
+// ── PROBLEM BUTTONS ───────────────────────────────────────────────────────────
+function initProblemButtons() {
+  const domains = { eda: "btns-eda", compilers: "btns-compilers", compbio: "btns-compbio", logistics: "btns-logistics" };
+  PROBLEMS.forEach(p => {
+    const btn = document.createElement("button");
+    btn.className = "problem-btn" + (p.key === currentProblem ? " active" : "");
+    btn.textContent = p.label;
+    btn.dataset.key = p.key;
+    btn.addEventListener("click", () => {
+      currentProblem = p.key;
+      document.querySelectorAll(".problem-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderProblemView();
+    });
+    document.getElementById(domains[p.domain]).appendChild(btn);
+  });
+}
+
+// ── PER-PROBLEM VIEW ──────────────────────────────────────────────────────────
+function renderProblemView() {
+  const pInfo = PROBLEMS.find(p => p.key === currentProblem);
+  document.getElementById("prob-chart-title").textContent = pInfo ? pInfo.label : currentProblem;
+
+  let rows = perProblemData.filter(d => d.Problem === currentProblem);
+  rows = rows.map(d => ({ ...d, QYI: +d.QYI, Yield: +d.Yield, Quality: +d.Quality }));
+  rows.sort((a,b) => {
+    const diff = a[probSort.col] - b[probSort.col];
+    return probSort.dir === "asc" ? diff : -diff;
+  });
+
+  // Bar chart
+  const inner = document.getElementById("bar-chart-inner");
+  inner.innerHTML = "";
+  rows.forEach(d => {
+    const pct = Math.max(0, Math.min(100, d.QYI * 100));
+    const color = `hsl(${(d.QYI*120).toFixed(0)},65%,42%)`;
+    const div = document.createElement("div");
+    div.className = "bar-row";
+    div.innerHTML = `
+      <div class="bar-model" title="${d.Model}">${d.Model}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <div class="bar-val" style="color:${color}">${fmt(d.QYI)}</div>
+    `;
+    inner.appendChild(div);
+  });
+
+  // Table
+  const tbody = document.querySelector("#prob-table tbody");
+  tbody.innerHTML = "";
+  rows.forEach(d => {
+    const meta = metadata.find(m => m.Model === d.Model) || {};
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="model-cell"><a href="${meta.URL||'#'}" target="_blank">${d.Model}</a></td>
+      <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.QYI)};color:${heatText(d.QYI)}">${fmt(d.QYI)}</span></td>
+      <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.Yield)};color:${heatText(d.Yield)}">${fmt(d.Yield)}</span></td>
+      <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.Quality)};color:${heatText(d.Quality)}">${fmt(d.Quality)}</span></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Sort header indicators
+  document.querySelectorAll("#prob-table thead th[data-prob-col]").forEach(th => {
+    const isActive = th.dataset.probCol === probSort.col;
+    th.classList.toggle("sorted", isActive);
+    const icon = th.querySelector(".sort-icon");
+    if (icon) icon.textContent = isActive ? (probSort.dir==="desc"?" ▼":" ▲") : "";
+  });
+}
+
+// ── SOLVE METRICS ─────────────────────────────────────────────────────────────
+function renderSolveMetrics() {
+  const cols = ["solve@10 stage3","solve@5 stage3","solve@1 stage3",
+                "solve@10 stage2","solve@5 stage2","solve@1 stage2",
+                "solve@10 stage1","solve@5 stage1","solve@1 stage1"];
+  const sorted = [...solveData].sort((a,b) => {
+    if (solveSort.col === "Model") return solveSort.dir==="asc" ? a.Model.localeCompare(b.Model) : b.Model.localeCompare(a.Model);
+    const diff = +a[solveSort.col] - +b[solveSort.col];
+    return solveSort.dir==="asc" ? diff : -diff;
+  });
+
+  const tbody = document.querySelector("#solve-table tbody");
+  tbody.innerHTML = "";
+  sorted.forEach(d => {
+    const meta = metadata.find(m => m.Model === d.Model) || {};
+    const tr = document.createElement("tr");
+    const cells = cols.map(c => {
+      const v = +d[c];
+      return `<td class="metric-cell center"><span class="heat" style="background:${heatColor(v)};color:${heatText(v)}">${fmtPct(v)}</span></td>`;
+    }).join("");
+    tr.innerHTML = `<td class="model-cell"><a href="${meta.URL||'#'}" target="_blank">${d.Model}</a></td>${cells}`;
+    tbody.appendChild(tr);
+  });
+
+  document.querySelectorAll("#solve-table thead th[data-solve-col]").forEach(th => {
+    const isActive = th.dataset.solveCol === solveSort.col;
+    th.classList.toggle("sorted", isActive);
+    const icon = th.querySelector(".sort-icon");
+    if (icon) icon.textContent = isActive ? (solveSort.dir==="desc"?" ▼":" ▲") : "";
+  });
+}
+
+// ── TEMPERATURE SYNC ──────────────────────────────────────────────────────────
+async function loadTemp(temp) {
+  currentTemp = temp;
+  ["temp-toggle","lb-temp-toggle"].forEach(id => {
+    document.querySelectorAll(`#${id} .toggle-btn`).forEach(btn => {
+      btn.classList.toggle("active", +btn.dataset.temp === temp);
+    });
+  });
+  document.getElementById("lb-temp-label").textContent = `(T = ${temp})`;
+
+  const file = `results/overall_qyi_t${temp}.csv`;
+  try {
+    lbData = await d3.csv(file);
+    lbData.forEach(d => { d.Release_Date = (metadata.find(m=>m.Model===d.Model)||{}).Release_Date||""; });
+    drawScatter(lbData);
+    renderLeaderboard();
+  } catch(e) {
+    console.error("Failed to load", file, e);
+  }
+}
+
+// ── SORT HANDLERS ─────────────────────────────────────────────────────────────
+document.querySelectorAll("#lb-table thead th[data-col]").forEach(th => {
+  th.addEventListener("click", () => {
+    const col = th.dataset.col;
+    if (lbSort.col === col) lbSort.dir = lbSort.dir==="asc"?"desc":"asc";
+    else { lbSort.col = col; lbSort.dir = col==="Model"||col==="Release_Date"?"asc":"desc"; }
+    renderLeaderboard();
+  });
+});
+
+document.querySelectorAll("#prob-table thead th[data-prob-col]").forEach(th => {
+  th.addEventListener("click", () => {
+    const col = th.dataset.probCol;
+    if (probSort.col === col) probSort.dir = probSort.dir==="asc"?"desc":"asc";
+    else { probSort.col = col; probSort.dir = "desc"; }
+    renderProblemView();
+  });
+});
+
+document.querySelectorAll("#solve-table thead th[data-solve-col]").forEach(th => {
+  th.addEventListener("click", () => {
+    const col = th.dataset.solveCol;
+    if (solveSort.col === col) solveSort.dir = solveSort.dir==="asc"?"desc":"asc";
+    else { solveSort.col = col; solveSort.dir = "desc"; }
+    renderSolveMetrics();
+  });
+});
+
+// ── TEMPERATURE TOGGLES ───────────────────────────────────────────────────────
+document.querySelectorAll("#temp-toggle .toggle-btn, #lb-temp-toggle .toggle-btn").forEach(btn => {
+  btn.addEventListener("click", () => loadTemp(+btn.dataset.temp));
+});
+
+// ── CITATION ──────────────────────────────────────────────────────────────────
+function copyCitation() {
+  const text = `@article{chen2025heurigym,\n  title={HeuriGym: An Agentic Benchmark for LLM-Crafted Heuristics in Combinatorial Optimization},\n  author={Hongzheng Chen and Yingheng Wang and Yaohui Cai and Hins Hu and Jiajie Li and Shirley Huang and Chenhui Deng and Rongjian Liang and Shufeng Kong and Haoxing Ren and Samitha Samaranayake and Carla P. Gomes and Zhiru Zhang},\n  journal={arXiv preprint arXiv:2506.07972},\n  year={2025}\n}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById("copy-btn");
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+async function init() {
+  [metadata, perProblemData, solveData] = await Promise.all([
+    d3.csv("results/model_metadata.csv"),
+    d3.csv("results/per_problem_qyi.csv"),
+    d3.csv("results/solve_metrics_summary.csv"),
+  ]);
+
+  initProblemButtons();
+  renderProblemView();
+  renderSolveMetrics();
+  await loadTemp(0);
+}
+
+init();
+</script>
 </body>
 </html>
