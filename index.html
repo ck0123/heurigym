@@ -490,6 +490,7 @@
   <a class="nav-brand" href="#home">Heuri<span>Gym</span></a>
   <ul class="nav-links">
     <li><a href="#overview">Overview</a></li>
+    <li><a href="#cost">Cost vs. QYI</a></li>
     <li><a href="#leaderboard">Leaderboard</a></li>
     <li><a href="#problems">Per-Problem</a></li>
     <li><a href="#solve-metrics">Solve Metrics</a></li>
@@ -536,8 +537,21 @@
   </div>
 </section>
 
+<!-- COST VS QYI -->
+<section class="section alt" id="cost">
+  <div class="container">
+    <div class="section-header">
+      <h2>QYI vs. API Cost</h2>
+    </div>
+    <div class="chart-wrap">
+      <div id="cost-chart"></div>
+    </div>
+    <p class="section-note">Total API cost estimated from official list pricing × token counts across all 9 problems (5 iterations, T=0). Cost axis is on a logarithmic scale. Hover over a point for details.</p>
+  </div>
+</section>
+
 <!-- LEADERBOARD -->
-<section class="section alt" id="leaderboard">
+<section class="section" id="leaderboard">
   <div class="container">
     <div class="section-header">
       <h2>Leaderboard <span id="lb-temp-label" style="color:var(--text-muted);font-weight:400;font-size:1rem">(T = 0)</span></h2>
@@ -680,7 +694,7 @@ const PROBLEMS = [
   { key: "pickup_delivery_time_windows", label: "Pickup & Delivery TW",       domain: "logistics" },
 ];
 
-let lbData = [], metadata = [], perProblemData = [], solveData = [];
+let lbData = [], t0Data = [], metadata = [], perProblemData = [], solveData = [];
 let currentTemp = 0;
 let lbSort = { col: "Weighted_QYI", dir: "desc" };
 let probSort = { col: "QYI", dir: "desc" };
@@ -700,6 +714,11 @@ function heatText(v) {
 }
 function fmt(v, digits=3) { return (+v).toFixed(digits); }
 function fmtPct(v) { return (v * 100).toFixed(1) + "%"; }
+function fmtDate(str) {
+  if (!str) return '';
+  const d = new Date(str + 'T12:00:00Z');
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', timeZone: 'UTC' });
+}
 
 // ── SCATTER PLOT ──────────────────────────────────────────────────────────────
 function drawScatter(data) {
@@ -782,6 +801,64 @@ function drawScatter(data) {
     .on("mouseleave", () => tt.style("opacity",0));
 }
 
+// ── COST VS QYI CHART ─────────────────────────────────────────────────────────
+function drawCostChart(data) {
+  const W = 820, H = 400, mg = { top: 24, right: 40, bottom: 52, left: 68 };
+  d3.select("#cost-chart").selectAll("*").remove();
+
+  const valid = data.filter(d => +d.Cost > 0);
+  if (!valid.length) return;
+
+  const svg = d3.select("#cost-chart").append("svg")
+    .attr("width", W).attr("height", H).attr("viewBox", `0 0 ${W} ${H}`)
+    .style("max-width","100%");
+
+  const x = d3.scaleLog().domain([0.3, 35]).range([mg.left, W - mg.right]);
+  const y = d3.scaleLinear().domain([0, 1.05]).range([H - mg.bottom, mg.top]);
+  const color = d3.scaleOrdinal(d3.schemeTableau10).domain(valid.map(d => d.Model));
+
+  // Horizontal grid only
+  svg.append("g").attr("class","grid")
+    .attr("transform",`translate(${mg.left},0)`)
+    .call(d3.axisLeft(y).ticks(6).tickSize(-(W-mg.left-mg.right)).tickFormat(""))
+    .call(g => g.select(".domain").remove())
+    .call(g => g.selectAll("line").attr("stroke","#E2E8F0").attr("stroke-dasharray","3,3"));
+
+  // Axes
+  svg.append("g").attr("transform",`translate(0,${H-mg.bottom})`)
+    .call(d3.axisBottom(x).ticks(8,"$,.0f").tickFormat(d => `$${d}`))
+    .call(g => g.select(".domain").attr("stroke","#CBD5E1"))
+    .call(g => g.selectAll("text").attr("font-size","11").attr("fill","#64748B"));
+  svg.append("g").attr("transform",`translate(${mg.left},0)`)
+    .call(d3.axisLeft(y).ticks(6))
+    .call(g => g.select(".domain").attr("stroke","#CBD5E1"))
+    .call(g => g.selectAll("text").attr("font-size","11").attr("fill","#64748B"));
+
+  // Axis labels
+  svg.append("text").attr("x",(mg.left+W-mg.right)/2).attr("y",H-8)
+    .attr("text-anchor","middle").attr("font-size","13").attr("fill","#64748B").attr("font-weight","500")
+    .text("Total API Cost (USD, log scale)");
+  svg.append("text").attr("transform","rotate(-90)").attr("x",-(mg.top+H-mg.bottom)/2).attr("y",16)
+    .attr("text-anchor","middle").attr("font-size","13").attr("fill","#64748B").attr("font-weight","500")
+    .text("Weighted QYI");
+
+  const tt = d3.select("#tooltip");
+
+  svg.selectAll("circle").data(valid).enter().append("circle")
+    .attr("cx", d => x(+d.Cost))
+    .attr("cy", d => y(+d.Weighted_QYI))
+    .attr("r", 6)
+    .attr("fill", d => color(d.Model))
+    .attr("stroke","white").attr("stroke-width",1.5)
+    .style("cursor","pointer")
+    .on("mousemove", function(event, d) {
+      tt.style("opacity",1)
+        .style("left",(event.clientX+14)+"px").style("top",(event.clientY-12)+"px")
+        .html(`<strong>${d.Model}</strong>QYI: ${fmt(+d.Weighted_QYI)}<br>Yield: ${fmt(+d.Weighted_Yield)}<br>Quality: ${fmt(+d.Weighted_Quality)}<br>Cost: $${fmt(+d.Cost,2)}`);
+    })
+    .on("mouseleave", () => tt.style("opacity",0));
+}
+
 // ── LEADERBOARD ───────────────────────────────────────────────────────────────
 function renderLeaderboard() {
   const sorted = [...lbData].sort((a,b) => {
@@ -809,7 +886,7 @@ function renderLeaderboard() {
       <td class="metric-cell"><span class="heat" style="background:${heatColor(yld)};color:${heatText(yld)}">${fmt(yld)}</span></td>
       <td class="metric-cell"><span class="heat" style="background:${heatColor(qual)};color:${heatText(qual)}">${fmt(qual)}</span></td>
       <td class="cost-cell">$${fmt(+d.Cost,2)}</td>
-      <td class="date-cell">${meta.Release_Date||''}</td>
+      <td class="date-cell">${fmtDate(meta.Release_Date)}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -950,6 +1027,8 @@ async function loadTemp(temp) {
     lbData.forEach(d => { d.Release_Date = (metadata.find(m=>m.Model===d.Model)||{}).Release_Date||""; });
     drawScatter(lbData);
     renderLeaderboard();
+    // Cost chart always uses T=0 data (all 19 models have cost there)
+    drawCostChart(t0Data.length ? t0Data : lbData);
   } catch(e) {
     console.error("Failed to load", file, e);
   }
@@ -1001,11 +1080,13 @@ function copyCitation() {
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 async function init() {
-  [metadata, perProblemData, solveData] = await Promise.all([
+  [metadata, perProblemData, solveData, t0Data] = await Promise.all([
     d3.csv("results/model_metadata.csv"),
     d3.csv("results/per_problem_qyi.csv"),
     d3.csv("results/solve_metrics_summary.csv"),
+    d3.csv("results/overall_qyi_t0.csv"),
   ]);
+  t0Data.forEach(d => { d.Release_Date = (metadata.find(m=>m.Model===d.Model)||{}).Release_Date||""; });
 
   initProblemButtons();
   renderProblemView();
