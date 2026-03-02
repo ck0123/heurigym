@@ -544,22 +544,25 @@
       transition: background 0.15s; font-family: inherit; line-height: 1;
     }
     .cm-close-btn:hover { background: rgba(255,255,255,0.2); }
-    .cm-pre {
-      overflow: auto; margin: 0; padding: 1.1rem 1.4rem;
-      flex: 1; font-size: 0.81rem; line-height: 1.65;
+    .cm-body {
+      display: flex; flex: 1; overflow: auto;
+      font-size: 0.81rem; line-height: 1.65;
       font-family: 'JetBrains Mono','Fira Code','Cascadia Code','Consolas',monospace;
     }
-    .cm-pre code { background: none !important; padding: 0 !important; font-size: inherit !important; }
-    /* line-numbers plugin */
-    .cm-pre .hljs-ln { border-collapse: collapse; width: 100%; }
-    .cm-pre .hljs-ln td { padding: 0; }
-    .cm-pre .hljs-ln-numbers {
-      width: 2.8em; padding-right: 1em !important;
-      text-align: right; vertical-align: top;
-      color: #4a5568; border-right: 1px solid #2d2d44;
-      user-select: none; cursor: default;
+    .cm-gutter {
+      position: sticky; left: 0; flex-shrink: 0;
+      padding: 1.1rem 0.75rem 1.1rem 1rem;
+      min-width: 3em; text-align: right;
+      color: #4a5568; background: #1e1e2e;
+      border-right: 1px solid #2d2d44;
+      user-select: none; cursor: default; line-height: 1.65;
     }
-    .cm-pre .hljs-ln-code { padding-left: 1em !important; }
+    .cm-gutter span { display: block; }
+    .cm-pre {
+      margin: 0; padding: 1.1rem 1.4rem;
+      flex: 1; background: transparent; overflow: visible;
+    }
+    .cm-pre code { background: none !important; padding: 0 !important; font-size: inherit !important; }
     /* view-code button in table */
     .code-view-btn {
       display: inline-flex; align-items: center; gap: 0.3rem;
@@ -623,7 +626,10 @@
         <button class="cm-close-btn" onclick="closeCodeModal()">×</button>
       </div>
     </div>
-    <pre class="cm-pre"><code class="language-python" id="cm-code"></code></pre>
+    <div class="cm-body">
+      <div class="cm-gutter" id="cm-gutter"></div>
+      <pre class="cm-pre"><code class="language-python" id="cm-code"></code></pre>
+    </div>
   </div>
 </div>
 
@@ -1427,7 +1433,11 @@ async function showCode(modelName, problemKey) {
   codeEl.textContent = code;
   if (!window.hljs) await loadHljs();
   hljs.highlightElement(codeEl);
-  hljs.lineNumbersBlock(codeEl);
+  // Populate gutter
+  const lines = code.split('\n');
+  if (lines[lines.length - 1] === '') lines.pop();
+  document.getElementById('cm-gutter').innerHTML =
+    lines.map((_, i) => `<span>${i + 1}</span>`).join('');
 
   const modal = document.getElementById("code-modal");
   modal.classList.remove("hidden");
@@ -1462,12 +1472,7 @@ function loadHljs() {
     s.onload = () => {
       const py = document.createElement("script");
       py.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js";
-      py.onload = () => {
-        const ln = document.createElement("script");
-        ln.src = "https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js";
-        ln.onload = resolve;
-        document.head.appendChild(ln);
-      };
+      py.onload = resolve;
       document.head.appendChild(py);
     };
     document.head.appendChild(s);
