@@ -1077,7 +1077,7 @@ function drawCostChart(data) {
 
   // Axes
   svg.append("g").attr("transform",`translate(0,${H-mg.bottom})`)
-    .call(d3.axisBottom(x).ticks(8,"$,.0f").tickFormat(d => `$${d}`))
+    .call(d3.axisBottom(x).tickValues([0.5, 1, 2, 5, 10, 30]).tickFormat(d => `$${d}`))
     .call(g => g.select(".domain").attr("stroke","#CBD5E1"))
     .call(g => g.selectAll("text").attr("font-size","11").attr("fill","#64748B"));
   svg.append("g").attr("transform",`translate(${mg.left},0)`)
