@@ -170,3 +170,12 @@ Qwen3-235B-A22B,pedigree,0.52,0.5,0.5416666666666667
 Qwen3-235B-A22B,crew_pairing,0.3366562875020479,0.21428571428571427,0.7848612556847296
 Qwen3-235B-A22B,pickup_delivery_time_windows,0.0,0.0,0.0
 Qwen3-235B-A22B,protein_sequence_design,0.7804493403042305,0.875,0.7043398567543478
+MiMo-V2-Flash,operator_scheduling,0.08,0.0417,1.0
+MiMo-V2-Flash,technology_mapping,0.0,0.0,0.0
+MiMo-V2-Flash,global_routing,0.0,0.0,0.0
+MiMo-V2-Flash,egraph_extraction,0.0,0.0,0.0
+MiMo-V2-Flash,intra_op_parallel,0.6097,0.7857,0.4982
+MiMo-V2-Flash,protein_sequence_design,0.3173,0.2083,0.6657
+MiMo-V2-Flash,pedigree,0.2609,0.15,1.0
+MiMo-V2-Flash,crew_pairing,0.0,0.0,0.0
+MiMo-V2-Flash,pickup_delivery_time_windows,0.1818,0.1,0.9999
