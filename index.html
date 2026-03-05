@@ -396,6 +396,19 @@
       color: white;
       box-shadow: 0 2px 8px rgba(79,70,229,0.3);
     }
+    .problem-btn .diff-stars {
+      font-size: 0.65rem;
+      opacity: 0.55;
+      margin-left: 0.3rem;
+      letter-spacing: -0.05em;
+    }
+    .problem-btn.active .diff-stars { opacity: 0.8; }
+    .prob-difficulty {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-left: 0.4rem;
+      letter-spacing: -0.05em;
+    }
 
     /* ── PER-PROBLEM CHART ── */
     .prob-chart {
@@ -844,16 +857,17 @@
 <script>
 // ── DATA & STATE ──────────────────────────────────────────────────────────────
 const PROBLEMS = [
-  { key: "operator_scheduling",          label: "Operator Scheduling",        domain: "eda" },
-  { key: "technology_mapping",           label: "Technology Mapping",         domain: "eda" },
-  { key: "global_routing",               label: "Global Routing",             domain: "eda" },
-  { key: "egraph_extraction",            label: "E-Graph Extraction",         domain: "compilers" },
-  { key: "intra_op_parallel",            label: "Intra-Op Parallelism",       domain: "compilers" },
-  { key: "protein_sequence_design",      label: "Protein Seq. Design",        domain: "compbio" },
-  { key: "pedigree",                     label: "Mendelian Error Detection",  domain: "compbio" },
-  { key: "crew_pairing",                 label: "Airline Crew Pairing",       domain: "logistics" },
-  { key: "pickup_delivery_time_windows", label: "Pickup & Delivery TW",       domain: "logistics" },
+  { key: "operator_scheduling",          label: "Operator Scheduling",        domain: "eda",       difficulty: 1 },
+  { key: "technology_mapping",           label: "Technology Mapping",         domain: "eda",       difficulty: 2 },
+  { key: "global_routing",               label: "Global Routing",             domain: "eda",       difficulty: 3 },
+  { key: "egraph_extraction",            label: "E-Graph Extraction",         domain: "compilers", difficulty: 1 },
+  { key: "intra_op_parallel",            label: "Intra-Op Parallelism",       domain: "compilers", difficulty: 2 },
+  { key: "protein_sequence_design",      label: "Protein Seq. Design",        domain: "compbio",   difficulty: 1 },
+  { key: "pedigree",                     label: "Mendelian Error Detection",  domain: "compbio",   difficulty: 2 },
+  { key: "crew_pairing",                 label: "Airline Crew Pairing",       domain: "logistics", difficulty: 2 },
+  { key: "pickup_delivery_time_windows", label: "Pickup & Delivery TW",       domain: "logistics", difficulty: 3 },
 ];
+const DIFF_STARS = ["", "⋆", "⋆⋆", "⋆⋆⋆"];
 
 let lbData = [], t0Data = [], metadata = [], perProblemData = [], solveData = [];
 let currentTemp = 0;
@@ -1186,7 +1200,7 @@ function initProblemButtons() {
   PROBLEMS.forEach(p => {
     const btn = document.createElement("button");
     btn.className = "problem-btn" + (p.key === currentProblem ? " active" : "");
-    btn.textContent = p.label;
+    btn.innerHTML = `${p.label}<span class="diff-stars">${DIFF_STARS[p.difficulty]}</span>`;
     btn.dataset.key = p.key;
     btn.addEventListener("click", () => {
       currentProblem = p.key;
@@ -1201,7 +1215,12 @@ function initProblemButtons() {
 // ── PER-PROBLEM VIEW ──────────────────────────────────────────────────────────
 function renderProblemView() {
   const pInfo = PROBLEMS.find(p => p.key === currentProblem);
-  document.getElementById("prob-chart-title").textContent = pInfo ? pInfo.label : currentProblem;
+  const titleEl = document.getElementById("prob-chart-title");
+  if (pInfo) {
+    titleEl.innerHTML = `${pInfo.label}<span class="prob-difficulty">${DIFF_STARS[pInfo.difficulty]}</span>`;
+  } else {
+    titleEl.textContent = currentProblem;
+  }
 
   let rows = perProblemData.filter(d => d.Problem === currentProblem);
   rows = rows.map(d => ({ ...d, QYI: +d.QYI, Yield: +d.Yield, Quality: +d.Quality }));
