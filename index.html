@@ -778,7 +778,7 @@
         <tbody></tbody>
       </table>
     </div>
-    <p class="section-note">Per-problem QYI, Yield, and Quality for all 20 evaluated models. Original 9 models ran 10 iterations (T=0); the 11 recent models ran 5 iterations (T=0).</p>
+    <p class="section-note">Per-problem QYI, Yield, and Quality for all 21 evaluated models. Original 9 models ran 10 iterations (T=0); the 12 recent models ran 5 iterations (T=0).</p>
   </div>
 </section>
 
@@ -1317,7 +1317,7 @@ async function loadTemp(temp) {
     lbData.forEach(d => { d.Release_Date = (metadata.find(m=>m.Model===d.Model)||{}).Release_Date||""; });
     drawScatter(lbData);
     renderLeaderboard();
-    // Cost chart always uses T=0 data (all 20 models have cost there)
+    // Cost chart always uses T=0 data (all 21 models have cost there)
     drawCostChart(t0Data.length ? t0Data : lbData);
   } catch(e) {
     console.error("Failed to load", file, e);
@@ -1399,6 +1399,7 @@ const SOLVER_KEY = {
   "MiniMax-M2.5":      "minimax-m2.5",
   "DeepSeek-V3.2":     "deepseek-v3.2",
   "MiMo-V2-Flash":     "mimo-v2-flash",
+  "GPT-5.4":     "gpt-5.4",
 };
 let solversData = null;
 
