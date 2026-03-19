@@ -188,3 +188,12 @@ GPT-5.4,protein_sequence_design,0.9333,0.9167,0.9505
 GPT-5.4,pedigree,0.9246,1.0,0.8597
 GPT-5.4,crew_pairing,0.919,1.0,0.8502
 GPT-5.4,pickup_delivery_time_windows,0.4506,0.3,0.9049
+Mimo-V2-Pro,operator_scheduling,0.9895,1.0,0.9793
+Mimo-V2-Pro,technology_mapping,0.0,0.0,0.0
+Mimo-V2-Pro,global_routing,0.9714,1.0,0.9445
+Mimo-V2-Pro,egraph_extraction,0.0,0.0,0.0
+Mimo-V2-Pro,intra_op_parallel,0.8904,1.0,0.8025
+Mimo-V2-Pro,protein_sequence_design,0.7997,0.9167,0.7093
+Mimo-V2-Pro,pedigree,0.9018,1.0,0.8212
+Mimo-V2-Pro,crew_pairing,0.8531,1.0,0.7438
+Mimo-V2-Pro,pickup_delivery_time_windows,0.0645,0.0333,0.9999
