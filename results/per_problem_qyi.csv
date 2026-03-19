@@ -197,3 +197,12 @@ Mimo-V2-Pro,protein_sequence_design,0.7997,0.9167,0.7093
 Mimo-V2-Pro,pedigree,0.9018,1.0,0.8212
 Mimo-V2-Pro,crew_pairing,0.8531,1.0,0.7438
 Mimo-V2-Pro,pickup_delivery_time_windows,0.0645,0.0333,0.9999
+Mimo-V2-Omni,operator_scheduling,0.9687,1.0,0.9393
+Mimo-V2-Omni,technology_mapping,0.0,0.0,0.0
+Mimo-V2-Omni,global_routing,0.0,0.0,0.0
+Mimo-V2-Omni,egraph_extraction,0.8068,0.7826,0.8325
+Mimo-V2-Omni,intra_op_parallel,0.8603,0.8214,0.903
+Mimo-V2-Omni,protein_sequence_design,0.7679,0.875,0.6842
+Mimo-V2-Omni,pedigree,0.7025,0.6,0.8472
+Mimo-V2-Omni,crew_pairing,0.9512,1.0,0.9069
+Mimo-V2-Omni,pickup_delivery_time_windows,0.0,0.0,0.0
