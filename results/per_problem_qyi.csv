@@ -206,3 +206,12 @@ Mimo-V2-Omni,protein_sequence_design,0.7679,0.875,0.6842
 Mimo-V2-Omni,pedigree,0.7025,0.6,0.8472
 Mimo-V2-Omni,crew_pairing,0.9512,1.0,0.9069
 Mimo-V2-Omni,pickup_delivery_time_windows,0.0,0.0,0.0
+GLM-5.1,operator_scheduling,0.9918,1.0,0.9838
+GLM-5.1,technology_mapping,0.7428,0.9032,0.6308
+GLM-5.1,global_routing,0.8288,0.7083,0.9985
+GLM-5.1,egraph_extraction,0.5771,0.4783,0.7274
+GLM-5.1,intra_op_parallel,0.8302,0.8214,0.8393
+GLM-5.1,protein_sequence_design,0.8512,0.75,0.984
+GLM-5.1,pedigree,0.9189,0.85,1.0
+GLM-5.1,crew_pairing,0.5507,0.4286,0.7702
+GLM-5.1,pickup_delivery_time_windows,0.6938,0.5333,0.9925
