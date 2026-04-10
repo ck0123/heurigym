@@ -215,3 +215,12 @@ GLM-5.1,protein_sequence_design,0.8512,0.75,0.984
 GLM-5.1,pedigree,0.9189,0.85,1.0
 GLM-5.1,crew_pairing,0.5507,0.4286,0.7702
 GLM-5.1,pickup_delivery_time_windows,0.6938,0.5333,0.9925
+Gemma-4-31B,operator_scheduling,0.2209,0.125,0.9487
+Gemma-4-31B,technology_mapping,0.3876,0.8065,0.2551
+Gemma-4-31B,global_routing,0.7649,1.0,0.6193
+Gemma-4-31B,egraph_extraction,0.9264,1.0,0.8628
+Gemma-4-31B,intra_op_parallel,0.8479,0.8571,0.8388
+Gemma-4-31B,protein_sequence_design,0.7804,0.875,0.7043
+Gemma-4-31B,pedigree,0.9189,0.85,1.0
+Gemma-4-31B,crew_pairing,0.8405,1.0,0.7248
+Gemma-4-31B,pickup_delivery_time_windows,0.1816,0.1,0.9889
