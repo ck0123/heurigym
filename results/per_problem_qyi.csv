@@ -242,3 +242,12 @@ Kimi-K2.6,protein_sequence_design,0.6638,0.875,0.5347
 Kimi-K2.6,pedigree,1.0,1.0,1.0
 Kimi-K2.6,crew_pairing,0.0,0.0,0.0
 Kimi-K2.6,pickup_delivery_time_windows,0.0,0.0,0.0
+Xiaomi-V2.5-Pro,operator_scheduling,0.9857,1.0,0.9718
+Xiaomi-V2.5-Pro,technology_mapping,0.0625,0.0323,1.0
+Xiaomi-V2.5-Pro,global_routing,0.9992,1.0,0.9984
+Xiaomi-V2.5-Pro,egraph_extraction,0.4498,0.3913,0.5289
+Xiaomi-V2.5-Pro,intra_op_parallel,0.8969,1.0,0.813
+Xiaomi-V2.5-Pro,protein_sequence_design,0.7902,0.875,0.7204
+Xiaomi-V2.5-Pro,pedigree,0.8235,0.7,1.0
+Xiaomi-V2.5-Pro,crew_pairing,0.9734,1.0,0.9482
+Xiaomi-V2.5-Pro,pickup_delivery_time_windows,0.0,0.0,0.0
