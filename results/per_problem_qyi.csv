@@ -233,3 +233,12 @@ Claude-Opus-4.7,protein_sequence_design,0.9121,0.875,0.9524
 Claude-Opus-4.7,pedigree,0.9189,0.85,1.0
 Claude-Opus-4.7,crew_pairing,0.8975,1.0,0.8141
 Claude-Opus-4.7,pickup_delivery_time_windows,0.9075,0.8333,0.9961
+Kimi-K2.6,operator_scheduling,0.0,0.0,0.0
+Kimi-K2.6,technology_mapping,0.0,0.0,0.0
+Kimi-K2.6,global_routing,0.0,0.0,0.0
+Kimi-K2.6,egraph_extraction,0.0,0.0,0.0
+Kimi-K2.6,intra_op_parallel,0.9358,0.9643,0.909
+Kimi-K2.6,protein_sequence_design,0.6638,0.875,0.5347
+Kimi-K2.6,pedigree,1.0,1.0,1.0
+Kimi-K2.6,crew_pairing,0.0,0.0,0.0
+Kimi-K2.6,pickup_delivery_time_windows,0.0,0.0,0.0
