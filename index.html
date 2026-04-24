@@ -677,7 +677,7 @@
     <img class="inst-logo inst-logo-nvidia"  src="assets/nvidia.svg"  alt="NVIDIA">
   </div>
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-num">25</div><div class="stat-label">Models Evaluated</div></div>
+    <div class="stat-card"><div class="stat-num">26</div><div class="stat-label">Models Evaluated</div></div>
     <div class="stat-card"><div class="stat-num">9</div><div class="stat-label">Problems</div></div>
     <div class="stat-card"><div class="stat-num">4</div><div class="stat-label">Domains</div></div>
     <div class="stat-card"><div class="stat-num">218</div><div class="stat-label">Test Cases</div></div>
@@ -791,7 +791,7 @@
         <tbody></tbody>
       </table>
     </div>
-    <p class="section-note">Per-problem QYI, Yield, and Quality for all 25 evaluated models. Original 9 models ran 10 iterations (T=0); the 16 recent models ran 5 iterations (T=0).</p>
+    <p class="section-note">Per-problem QYI, Yield, and Quality for all 26 evaluated models. Original 9 models ran 10 iterations (T=0); the 17 recent models ran 5 iterations (T=0).</p>
   </div>
 </section>
 
@@ -1336,7 +1336,7 @@ async function loadTemp(temp) {
     lbData.forEach(d => { d.Release_Date = (metadata.find(m=>m.Model===d.Model)||{}).Release_Date||""; });
     drawScatter(lbData);
     renderLeaderboard();
-    // Cost chart always uses T=0 data (all 25 models have cost there)
+    // Cost chart always uses T=0 data (all 26 models have cost there)
     drawCostChart(t0Data.length ? t0Data : lbData);
   } catch(e) {
     console.error("Failed to load", file, e);
@@ -1423,6 +1423,7 @@ const SOLVER_KEY = {
   "Mimo-V2-Omni":     "mimo-v2-omni",
   "GLM-5.1":     "glm-5.1",
   "Gemma-4-31B":     "gemma-4-31b-it",
+  "Claude-Opus-4.7":     "claude-opus-4.7",
 };
 let solversData = null;
 

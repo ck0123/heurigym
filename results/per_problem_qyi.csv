@@ -224,3 +224,12 @@ Gemma-4-31B,protein_sequence_design,0.7804,0.875,0.7043
 Gemma-4-31B,pedigree,0.9189,0.85,1.0
 Gemma-4-31B,crew_pairing,0.8405,1.0,0.7248
 Gemma-4-31B,pickup_delivery_time_windows,0.1816,0.1,0.9889
+Claude-Opus-4.7,operator_scheduling,0.9974,1.0,0.9948
+Claude-Opus-4.7,technology_mapping,0.7315,0.7742,0.6932
+Claude-Opus-4.7,global_routing,0.9999,1.0,0.9998
+Claude-Opus-4.7,egraph_extraction,0.9561,1.0,0.9159
+Claude-Opus-4.7,intra_op_parallel,0.934,1.0,0.8762
+Claude-Opus-4.7,protein_sequence_design,0.9121,0.875,0.9524
+Claude-Opus-4.7,pedigree,0.9189,0.85,1.0
+Claude-Opus-4.7,crew_pairing,0.8975,1.0,0.8141
+Claude-Opus-4.7,pickup_delivery_time_windows,0.9075,0.8333,0.9961
