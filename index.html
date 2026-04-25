@@ -788,9 +788,16 @@
       <h2>QYI vs. API Cost</h2>
     </div>
     <div class="chart-wrap">
-      <div id="cost-chart"></div>
+      <div class="scatter-layout">
+        <div class="scatter-area">
+          <div id="cost-chart"></div>
+        </div>
+        <div class="company-filter" id="cost-company-filter">
+          <div class="company-filter-title">Company</div>
+        </div>
+      </div>
     </div>
-    <p class="section-note">Total API cost estimated from official list pricing × token counts across all 9 problems (5 iterations, T=0). Cost axis is on a logarithmic scale. Hover over a point for details.</p>
+    <p class="section-note">Total API cost estimated from official list pricing × token counts across all 9 problems (5 iterations, T=0). Cost axis is on a logarithmic scale. Hover over a point for details. Select a single company to overlay a chronological trend line of its model releases.</p>
   </div>
 </section>
 
@@ -946,7 +953,8 @@ let lbSort = { col: "Weighted_QYI", dir: "desc" };
 let probSort = { col: "QYI", dir: "desc" };
 let solveSort = { col: "solve@10 stage3", dir: "desc" };
 let currentProblem = PROBLEMS[0].key;
-let currentCompany = "__all__";
+let currentCompany = "__all__";       // for overall scatter
+let currentCostCompany = "__all__";   // for QYI vs. Cost scatter
 
 function companyOf(model) {
   return (metadata.find(m => m.Model === model) || {}).Company || "Other";
@@ -1157,12 +1165,15 @@ function drawScatter(rawData) {
 }
 
 // ── COST VS QYI CHART ─────────────────────────────────────────────────────────
-function drawCostChart(data) {
+function drawCostChart(rawData) {
   const W = 820, H = 400, mg = { top: 24, right: 40, bottom: 52, left: 68 };
   d3.select("#cost-chart").selectAll("*").remove();
 
-  const valid = data.filter(d => +d.Cost > 0);
-  if (!valid.length) return;
+  const all = rawData.filter(d => +d.Cost > 0);
+  if (!all.length) return;
+  const valid = currentCostCompany === "__all__"
+    ? all
+    : all.filter(d => companyOf(d.Model) === currentCostCompany);
 
   const svg = d3.select("#cost-chart").append("svg")
     .attr("width", W).attr("height", H).attr("viewBox", `0 0 ${W} ${H}`)
@@ -1170,7 +1181,7 @@ function drawCostChart(data) {
 
   const x = d3.scaleLog().domain([0.3, 35]).range([mg.left, W - mg.right]);
   const y = d3.scaleLinear().domain([0, 1.05]).range([H - mg.bottom, mg.top]);
-  const color = d3.scaleOrdinal(d3.schemeTableau10).domain(valid.map(d => d.Model));
+  const color = d3.scaleOrdinal(d3.schemeTableau10).domain(all.map(d => d.Model));
 
   // ── "Most Attractive" zone: low Cost + high QYI
   const GCOST = 6, GQYI = 0.55;
@@ -1213,9 +1224,37 @@ function drawCostChart(data) {
 
   const tt = d3.select("#tooltip");
 
-  svg.selectAll("circle").data(valid).enter().append("circle")
-    .attr("cx", d => x(+d.Cost))
-    .attr("cy", d => y(+d.Weighted_QYI))
+  const cxFn = d => x(+d.Cost);
+  const cyFn = d => y(+d.Weighted_QYI);
+
+  // ── Chronological trend line: only when a single company is selected with ≥2 models
+  if (currentCostCompany !== "__all__" && valid.length >= 2) {
+    const ordered = valid
+      .filter(d => d.Release_Date)
+      .slice()
+      .sort((a, b) => d3.ascending(a.Release_Date, b.Release_Date));
+    if (ordered.length >= 2) {
+      const lineColor = color(ordered[0].Model);
+      const line = d3.line().x(cxFn).y(cyFn);
+      svg.append("path").datum(ordered)
+        .attr("fill", "none")
+        .attr("stroke", lineColor)
+        .attr("stroke-opacity", 0.5)
+        .attr("stroke-width", 1.75)
+        .attr("stroke-dasharray", "5,3")
+        .attr("d", line);
+      const last = ordered[ordered.length - 1];
+      svg.append("circle")
+        .attr("cx", cxFn(last)).attr("cy", cyFn(last))
+        .attr("r", 9).attr("fill", "none")
+        .attr("stroke", lineColor).attr("stroke-opacity", 0.5).attr("stroke-width", 1.5);
+    }
+  }
+
+  svg.selectAll("circle.cost-pt").data(valid).enter().append("circle")
+    .attr("class", "cost-pt")
+    .attr("cx", cxFn)
+    .attr("cy", cyFn)
     .attr("r", 6)
     .attr("fill", d => color(d.Model))
     .attr("stroke","white").attr("stroke-width",1.5)
@@ -1223,7 +1262,7 @@ function drawCostChart(data) {
     .on("mousemove", function(event, d) {
       tt.style("opacity",1)
         .style("left",(event.clientX+14)+"px").style("top",(event.clientY-12)+"px")
-        .html(`<strong>${d.Model}</strong>QYI: ${fmt(+d.Weighted_QYI)}<br>Yield: ${fmt(+d.Weighted_Yield)}<br>Quality: ${fmt(+d.Weighted_Quality)}<br>Cost: $${fmt(+d.Cost,2)}`);
+        .html(`<strong>${d.Model}</strong>QYI: ${fmt(+d.Weighted_QYI)}<br>Yield: ${fmt(+d.Weighted_Yield)}<br>Quality: ${fmt(+d.Weighted_Quality)}<br>Cost: $${fmt(+d.Cost,2)}${d.Release_Date ? `<br>Released: ${fmtDate(d.Release_Date)}` : ""}`);
     })
     .on("mouseleave", () => tt.style("opacity",0));
 
@@ -1434,7 +1473,7 @@ function renderSolveMetrics() {
 }
 
 // ── COMPANY FILTER ────────────────────────────────────────────────────────────
-function renderCompanyFilter(data) {
+function renderCompanyFilter({ containerId, data, getCurrent, setCurrent, redraw }) {
   const counts = new Map();
   data.forEach(d => {
     const c = companyOf(d.Model);
@@ -1443,22 +1482,21 @@ function renderCompanyFilter(data) {
   // Sort: descending by count, then alphabetical
   const companies = [...counts.entries()].sort((a, b) => b[1] - a[1] || d3.ascending(a[0], b[0]));
 
-  const wrap = document.getElementById("company-filter");
-  // Clear existing buttons but keep the title
+  const wrap = document.getElementById(containerId);
   wrap.querySelectorAll(".company-btn").forEach(el => el.remove());
 
   const makeBtn = (key, label, count) => {
     const btn = document.createElement("button");
-    btn.className = "company-btn" + (currentCompany === key ? " active" : "");
+    btn.className = "company-btn" + (getCurrent() === key ? " active" : "");
     btn.dataset.company = key;
     btn.innerHTML = `<span>${label}</span><span class="company-count">${count}</span>`;
     btn.addEventListener("click", () => {
-      if (currentCompany === key) return;
-      currentCompany = key;
+      if (getCurrent() === key) return;
+      setCurrent(key);
       wrap.querySelectorAll(".company-btn").forEach(b => {
         b.classList.toggle("active", b.dataset.company === key);
       });
-      drawScatter(lbData);
+      redraw();
     });
     wrap.appendChild(btn);
   };
@@ -1485,7 +1523,13 @@ async function loadTemp(temp) {
       d.Release_Date = meta.Release_Date || "";
       d.Company = meta.Company || "Other";
     });
-    renderCompanyFilter(lbData);
+    renderCompanyFilter({
+      containerId: "company-filter",
+      data: lbData,
+      getCurrent: () => currentCompany,
+      setCurrent: (v) => { currentCompany = v; },
+      redraw: () => drawScatter(lbData),
+    });
     drawScatter(lbData);
     renderLeaderboard();
     // Cost chart always uses T=0 data (all 29 models have cost there)
@@ -1547,11 +1591,22 @@ async function init() {
     d3.csv("results/solve_metrics_summary.csv"),
     d3.csv("results/overall_qyi_t0.csv"),
   ]);
-  t0Data.forEach(d => { d.Release_Date = (metadata.find(m=>m.Model===d.Model)||{}).Release_Date||""; });
+  t0Data.forEach(d => {
+    const meta = metadata.find(m=>m.Model===d.Model) || {};
+    d.Release_Date = meta.Release_Date || "";
+    d.Company = meta.Company || "Other";
+  });
 
   initProblemButtons();
   renderProblemView();
   renderSolveMetrics();
+  renderCompanyFilter({
+    containerId: "cost-company-filter",
+    data: t0Data,
+    getCurrent: () => currentCostCompany,
+    setCurrent: (v) => { currentCostCompany = v; },
+    redraw: () => drawCostChart(t0Data),
+  });
   await loadTemp(0);
 }
 
