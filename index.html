@@ -265,6 +265,70 @@
       overflow-x: auto;
     }
     .chart-wrap svg { display: block; min-width: 600px; max-width: 100%; }
+
+    /* ── SCATTER + COMPANY FILTER LAYOUT ── */
+    .scatter-layout {
+      display: flex;
+      align-items: stretch;
+      gap: 1rem;
+    }
+    .scatter-layout .scatter-area {
+      flex: 1;
+      min-width: 0;
+      overflow-x: auto;
+    }
+    .company-filter {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      width: 150px;
+      flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      padding-left: 1rem;
+    }
+    .company-filter-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+    .company-btn {
+      padding: 0.32rem 0.65rem;
+      border-radius: 0.375rem;
+      border: 1.5px solid var(--border);
+      background: white;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+    }
+    .company-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+    .company-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      box-shadow: 0 2px 6px rgba(79,70,229,0.25);
+    }
+    .company-btn .company-count {
+      font-size: 0.7rem;
+      opacity: 0.7;
+      font-variant-numeric: tabular-nums;
+    }
+    .company-btn.active .company-count { opacity: 0.9; }
+    @media (max-width: 768px) {
+      .scatter-layout { flex-direction: column; }
+      .company-filter { width: 100%; border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 1rem; flex-direction: row; flex-wrap: wrap; }
+      .company-filter-title { width: 100%; }
+    }
     .tooltip {
       position: fixed;
       background: white;
@@ -704,9 +768,16 @@
       </div>
     </div>
     <div class="chart-wrap">
-      <div id="scatter-chart"></div>
+      <div class="scatter-layout">
+        <div class="scatter-area">
+          <div id="scatter-chart"></div>
+        </div>
+        <div class="company-filter" id="company-filter">
+          <div class="company-filter-title">Company</div>
+        </div>
+      </div>
     </div>
-    <p class="section-note">Yield and QYI values are weighted across the 9 problem sets by test case count. Quality is back-calculated from weighted QYI and weighted Yield via QYI = 2QY/(Q+Y).</p>
+    <p class="section-note">Yield and QYI values are weighted across the 9 problem sets by test case count. Quality is back-calculated from weighted QYI and weighted Yield via QYI = 2QY/(Q+Y). Select a single company to overlay a chronological trend line of its model releases.</p>
   </div>
 </section>
 
@@ -875,6 +946,11 @@ let lbSort = { col: "Weighted_QYI", dir: "desc" };
 let probSort = { col: "QYI", dir: "desc" };
 let solveSort = { col: "solve@10 stage3", dir: "desc" };
 let currentProblem = PROBLEMS[0].key;
+let currentCompany = "__all__";
+
+function companyOf(model) {
+  return (metadata.find(m => m.Model === model) || {}).Company || "Other";
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 // Short display names for crowded scatter plots
@@ -908,16 +984,31 @@ function fmtDate(str) {
 }
 
 // ── SCATTER PLOT ──────────────────────────────────────────────────────────────
-function drawScatter(data) {
+function drawScatter(rawData) {
   const W = 820, H = 420, mg = { top: 24, right: 80, bottom: 52, left: 60 };
   d3.select("#scatter-chart").selectAll("*").remove();
+
+  // Filter to selected company (if any) — keep full ordinal color domain so colors stay stable
+  const allModels = rawData.map(d => d.Model);
+  const data = currentCompany === "__all__"
+    ? rawData
+    : rawData.filter(d => companyOf(d.Model) === currentCompany);
+
   const svg = d3.select("#scatter-chart").append("svg")
     .attr("width", W).attr("height", H).attr("viewBox", `0 0 ${W} ${H}`)
     .style("max-width","100%");
 
   const x = d3.scaleLinear().domain([0.15, 1.02]).range([mg.left, W - mg.right]);
   const y = d3.scaleLinear().domain([0.15, 1.05]).range([H - mg.bottom, mg.top]);
-  const color = d3.scaleOrdinal(d3.schemeTableau10).domain(data.map(d => d.Model));
+  const color = d3.scaleOrdinal(d3.schemeTableau10).domain(allModels);
+
+  // Helper: project a model row to (x, y) pixel coords
+  const cy = d => {
+    const yld = +d.Weighted_Yield, qyi = +d.Weighted_QYI;
+    const denom = 2*yld - qyi;
+    return y(denom > 0.001 ? qyi*yld/denom : 0);
+  };
+  const cx = d => x(+d.Weighted_Yield);
 
   // ── "Most Attractive" zone: high Yield + high Quality
   const GX = 0.65, GY = 0.65;
@@ -979,14 +1070,36 @@ function drawScatter(data) {
   // Tooltip
   const tt = d3.select("#tooltip");
 
+  // ── Chronological trend line: only when a single company is selected with ≥2 models
+  if (currentCompany !== "__all__" && data.length >= 2) {
+    const ordered = data
+      .filter(d => d.Release_Date)
+      .slice()
+      .sort((a, b) => d3.ascending(a.Release_Date, b.Release_Date));
+    if (ordered.length >= 2) {
+      const lineColor = color(ordered[0].Model);
+      const line = d3.line().x(cx).y(cy);
+      svg.append("path").datum(ordered)
+        .attr("fill", "none")
+        .attr("stroke", lineColor)
+        .attr("stroke-opacity", 0.5)
+        .attr("stroke-width", 1.75)
+        .attr("stroke-dasharray", "5,3")
+        .attr("d", line);
+      // Arrowhead-ish marker on the latest point
+      const last = ordered[ordered.length - 1];
+      svg.append("circle")
+        .attr("cx", cx(last)).attr("cy", cy(last))
+        .attr("r", 9).attr("fill", "none")
+        .attr("stroke", lineColor).attr("stroke-opacity", 0.5).attr("stroke-width", 1.5);
+    }
+  }
+
   // Points
-  svg.selectAll("circle").data(data).enter().append("circle")
-    .attr("cx", d => x(+d.Weighted_Yield))
-    .attr("cy", d => {
-      const yld = +d.Weighted_Yield, qyi = +d.Weighted_QYI;
-      const denom = 2*yld - qyi;
-      return y(denom > 0.001 ? qyi*yld/denom : 0);
-    })
+  svg.selectAll("circle.model-pt").data(data).enter().append("circle")
+    .attr("class", "model-pt")
+    .attr("cx", cx)
+    .attr("cy", cy)
     .attr("r", 6)
     .attr("fill", d => color(d.Model))
     .attr("stroke","white").attr("stroke-width",1.5)
@@ -997,7 +1110,7 @@ function drawScatter(data) {
       const qual = denom > 0.001 ? qyi*yld/denom : 0;
       tt.style("opacity",1)
         .style("left",(event.clientX+14)+"px").style("top",(event.clientY-12)+"px")
-        .html(`<strong>${d.Model}</strong>QYI: ${fmt(qyi)}<br>Yield: ${fmt(yld)}<br>Quality: ${fmt(+d.Weighted_Quality)}<br>Cost: $${fmt(+d.Cost,2)}`);
+        .html(`<strong>${d.Model}</strong>QYI: ${fmt(qyi)}<br>Yield: ${fmt(yld)}<br>Quality: ${fmt(+d.Weighted_Quality)}<br>Cost: $${fmt(+d.Cost,2)}${d.Release_Date ? `<br>Released: ${fmtDate(d.Release_Date)}` : ""}`);
     })
     .on("mouseleave", () => tt.style("opacity",0));
 
@@ -1320,6 +1433,40 @@ function renderSolveMetrics() {
   });
 }
 
+// ── COMPANY FILTER ────────────────────────────────────────────────────────────
+function renderCompanyFilter(data) {
+  const counts = new Map();
+  data.forEach(d => {
+    const c = companyOf(d.Model);
+    counts.set(c, (counts.get(c) || 0) + 1);
+  });
+  // Sort: descending by count, then alphabetical
+  const companies = [...counts.entries()].sort((a, b) => b[1] - a[1] || d3.ascending(a[0], b[0]));
+
+  const wrap = document.getElementById("company-filter");
+  // Clear existing buttons but keep the title
+  wrap.querySelectorAll(".company-btn").forEach(el => el.remove());
+
+  const makeBtn = (key, label, count) => {
+    const btn = document.createElement("button");
+    btn.className = "company-btn" + (currentCompany === key ? " active" : "");
+    btn.dataset.company = key;
+    btn.innerHTML = `<span>${label}</span><span class="company-count">${count}</span>`;
+    btn.addEventListener("click", () => {
+      if (currentCompany === key) return;
+      currentCompany = key;
+      wrap.querySelectorAll(".company-btn").forEach(b => {
+        b.classList.toggle("active", b.dataset.company === key);
+      });
+      drawScatter(lbData);
+    });
+    wrap.appendChild(btn);
+  };
+
+  makeBtn("__all__", "All", data.length);
+  companies.forEach(([name, n]) => makeBtn(name, name, n));
+}
+
 // ── TEMPERATURE SYNC ──────────────────────────────────────────────────────────
 async function loadTemp(temp) {
   currentTemp = temp;
@@ -1333,7 +1480,12 @@ async function loadTemp(temp) {
   const file = `results/overall_qyi_t${temp}.csv`;
   try {
     lbData = await d3.csv(file);
-    lbData.forEach(d => { d.Release_Date = (metadata.find(m=>m.Model===d.Model)||{}).Release_Date||""; });
+    lbData.forEach(d => {
+      const meta = metadata.find(m=>m.Model===d.Model) || {};
+      d.Release_Date = meta.Release_Date || "";
+      d.Company = meta.Company || "Other";
+    });
+    renderCompanyFilter(lbData);
     drawScatter(lbData);
     renderLeaderboard();
     // Cost chart always uses T=0 data (all 29 models have cost there)
