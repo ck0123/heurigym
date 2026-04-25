@@ -251,3 +251,12 @@ Mimo-V2.5-Pro,protein_sequence_design,0.7902,0.875,0.7204
 Mimo-V2.5-Pro,pedigree,0.8235,0.7,1.0
 Mimo-V2.5-Pro,crew_pairing,0.9734,1.0,0.9482
 Mimo-V2.5-Pro,pickup_delivery_time_windows,0.0,0.0,0.0
+DeepSeek-V4-Pro,operator_scheduling,1.0,1.0,1.0
+DeepSeek-V4-Pro,technology_mapping,0.0,0.0,0.0
+DeepSeek-V4-Pro,global_routing,0.0,0.0,0.0
+DeepSeek-V4-Pro,egraph_extraction,0.9502,1.0,0.9052
+DeepSeek-V4-Pro,intra_op_parallel,0.8955,0.8214,0.9843
+DeepSeek-V4-Pro,protein_sequence_design,0.8661,0.875,0.8575
+DeepSeek-V4-Pro,pedigree,0.9189,0.85,1.0
+DeepSeek-V4-Pro,crew_pairing,0.6526,0.9286,0.503
+DeepSeek-V4-Pro,pickup_delivery_time_windows,0.2857,0.1667,0.9992
