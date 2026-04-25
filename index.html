@@ -741,7 +741,7 @@
     <img class="inst-logo inst-logo-nvidia"  src="assets/nvidia.svg"  alt="NVIDIA">
   </div>
   <div class="stats-row">
-    <div class="stat-card"><div class="stat-num">29</div><div class="stat-label">Models Evaluated</div></div>
+    <div class="stat-card"><div class="stat-num">30</div><div class="stat-label">Models Evaluated</div></div>
     <div class="stat-card"><div class="stat-num">9</div><div class="stat-label">Problems</div></div>
     <div class="stat-card"><div class="stat-num">4</div><div class="stat-label">Domains</div></div>
     <div class="stat-card"><div class="stat-num">218</div><div class="stat-label">Test Cases</div></div>
@@ -854,7 +854,7 @@
       <div class="prob-chart-title">QYI by Model — <span id="prob-chart-title">Operator Scheduling</span></div>
       <div id="bar-chart-inner"></div>
     </div>
-    <p class="section-note">Per-problem QYI for all 29 evaluated models, sorted by QYI. Original 9 models ran 10 iterations (T=0); the 20 recent models ran 5 iterations (T=0).</p>
+    <p class="section-note">Per-problem QYI for all 30 evaluated models, sorted by QYI. Original 9 models ran 10 iterations (T=0); the 21 recent models ran 5 iterations (T=0).</p>
   </div>
 </section>
 
@@ -1485,7 +1485,7 @@ async function loadTemp(temp) {
     });
     drawScatter(lbData);
     renderLeaderboard();
-    // Cost chart always uses T=0 data (all 29 models have cost there)
+    // Cost chart always uses T=0 data (all 30 models have cost there)
     drawCostChart(t0Data.length ? t0Data : lbData);
   } catch(e) {
     console.error("Failed to load", file, e);
@@ -1578,6 +1578,7 @@ const SOLVER_KEY = {
   "Kimi-K2.6":     "kimi-k2.6",
   "Mimo-V2.5-Pro":     "mimo-v2.5-pro",
   "DeepSeek-V4-Pro":     "deepseek-v4-pro",
+  "GPT-5.5":     "gpt-5.5",
 };
 let solversData = null;
 
