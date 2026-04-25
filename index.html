@@ -854,22 +854,7 @@
       <div class="prob-chart-title">QYI by Model — <span id="prob-chart-title">Operator Scheduling</span></div>
       <div id="bar-chart-inner"></div>
     </div>
-
-    <div class="table-wrap">
-      <table id="prob-table">
-        <thead>
-          <tr>
-            <th style="text-align:left">Model</th>
-            <th class="center" data-prob-col="QYI">QYI ↕<span class="sort-icon">▼</span></th>
-            <th class="center" data-prob-col="Yield">Yield ↕<span class="sort-icon"></span></th>
-            <th class="center" data-prob-col="Quality">Quality ↕<span class="sort-icon"></span></th>
-            <th class="center" style="width:80px">Solver</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <p class="section-note">Per-problem QYI, Yield, and Quality for all 29 evaluated models. Original 9 models ran 10 iterations (T=0); the 20 recent models ran 5 iterations (T=0).</p>
+    <p class="section-note">Per-problem QYI for all 29 evaluated models, sorted by QYI. Original 9 models ran 10 iterations (T=0); the 20 recent models ran 5 iterations (T=0).</p>
   </div>
 </section>
 
@@ -950,7 +935,6 @@ const DIFF_STARS = ["", "⋆", "⋆⋆", "⋆⋆⋆"];
 let lbData = [], t0Data = [], metadata = [], perProblemData = [], solveData = [];
 let currentTemp = 0;
 let lbSort = { col: "Weighted_QYI", dir: "desc" };
-let probSort = { col: "QYI", dir: "desc" };
 let solveSort = { col: "solve@10 stage3", dir: "desc" };
 let currentProblem = PROBLEMS[0].key;
 let currentCompany = "__all__";       // for overall scatter
@@ -1376,10 +1360,7 @@ function renderProblemView() {
 
   let rows = perProblemData.filter(d => d.Problem === currentProblem);
   rows = rows.map(d => ({ ...d, QYI: +d.QYI, Yield: +d.Yield, Quality: +d.Quality }));
-  rows.sort((a,b) => {
-    const diff = a[probSort.col] - b[probSort.col];
-    return probSort.dir === "asc" ? diff : -diff;
-  });
+  rows.sort((a, b) => b.QYI - a.QYI);
 
   // Bar chart
   const inner = document.getElementById("bar-chart-inner");
@@ -1402,34 +1383,6 @@ function renderProblemView() {
       <div class="bar-btn-slot">${slotContent}</div>
     `;
     inner.appendChild(div);
-  });
-
-  // Table
-  const tbody = document.querySelector("#prob-table tbody");
-  tbody.innerHTML = "";
-  rows.forEach(d => {
-    const meta = metadata.find(m => m.Model === d.Model) || {};
-    const hasSolver = !!SOLVER_KEY[d.Model];
-    const codeCell = hasSolver
-      ? `<td class="metric-cell center"><button class="code-view-btn" onclick="showCode('${d.Model}','${currentProblem}')">⌨ Code</button></td>`
-      : `<td class="metric-cell center" style="color:var(--text-muted);font-size:0.8rem">—</td>`;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="model-cell"><a href="${meta.URL||'#'}" target="_blank">${d.Model}</a></td>
-      <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.QYI)};color:${heatText(d.QYI)}">${fmt(d.QYI)}</span></td>
-      <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.Yield)};color:${heatText(d.Yield)}">${fmt(d.Yield)}</span></td>
-      <td class="metric-cell center"><span class="heat" style="background:${heatColor(d.Quality)};color:${heatText(d.Quality)}">${fmt(d.Quality)}</span></td>
-      ${codeCell}
-    `;
-    tbody.appendChild(tr);
-  });
-
-  // Sort header indicators
-  document.querySelectorAll("#prob-table thead th[data-prob-col]").forEach(th => {
-    const isActive = th.dataset.probCol === probSort.col;
-    th.classList.toggle("sorted", isActive);
-    const icon = th.querySelector(".sort-icon");
-    if (icon) icon.textContent = isActive ? (probSort.dir==="desc"?" ▼":" ▲") : "";
   });
 }
 
@@ -1546,15 +1499,6 @@ document.querySelectorAll("#lb-table thead th[data-col]").forEach(th => {
     if (lbSort.col === col) lbSort.dir = lbSort.dir==="asc"?"desc":"asc";
     else { lbSort.col = col; lbSort.dir = col==="Model"||col==="Release_Date"?"asc":"desc"; }
     renderLeaderboard();
-  });
-});
-
-document.querySelectorAll("#prob-table thead th[data-prob-col]").forEach(th => {
-  th.addEventListener("click", () => {
-    const col = th.dataset.probCol;
-    if (probSort.col === col) probSort.dir = probSort.dir==="asc"?"desc":"asc";
-    else { probSort.col = col; probSort.dir = "desc"; }
-    renderProblemView();
   });
 });
 
