@@ -220,7 +220,11 @@ class ProgramExecutor:
                 
                 try:
                     # Prepare the command with all input files in the group
-                    cmd = ['taskset', '-c', '0-' + str(self.num_cores - 1), sys.executable, 'main.py']
+                    # taskset is Linux-only.  On macOS, rely on the portable
+                    # thread-count environment variables configured below.
+                    cmd = [sys.executable, 'main.py']
+                    if shutil.which('taskset'):
+                        cmd = ['taskset', '-c', '0-' + str(self.num_cores - 1), *cmd]
                     cmd.extend(sorted(group_files))  # Add all input files
                     cmd.append(str(output_file))  # Add output file
                     
@@ -400,7 +404,7 @@ class LLMInterface:
             },
             "deepseek": {
                 "api_key": os.getenv('DEEPSEEK_API_KEY'),
-                "base_url": "https://api.deepseek.com/v1",
+                "base_url": os.getenv('DEEPSEEK_BASE_URL', "https://api.deepseek.com/v1"),
             },
             "anthropic": {
                 "api_key": os.getenv('ANTHROPIC_API_KEY'),
@@ -712,6 +716,17 @@ Your goal is to improve the solution for as many test cases as possible, with sp
             json.dump(api_info, f, indent=2)
 
     def get_model_max_tokens(self, base_url: str, api_key: str, model_name: str):
+        smoke_limit = os.getenv("HEURIGYM_MAX_TOKENS")
+        if smoke_limit is not None:
+            try:
+                parsed_limit = int(smoke_limit)
+            except ValueError as exc:
+                raise ValueError("HEURIGYM_MAX_TOKENS must be a positive integer") from exc
+            if parsed_limit < 1:
+                raise ValueError("HEURIGYM_MAX_TOKENS must be a positive integer")
+            logger.info("Using HEURIGYM_MAX_TOKENS=%s", parsed_limit)
+            return parsed_limit
+
         # For OpenRouter, fetch the actual max_completion_tokens from model metadata
         # instead of probing, because OpenRouter accepts arbitrarily large max_tokens
         # in the probe even when the model's real limit is much lower (e.g. 65536 for
@@ -1070,6 +1085,8 @@ def generate_summary_table(results_data):
     
     # Sort metrics to ensure consistent order
     sorted_metrics = sorted(all_metrics)
+    if not sorted_metrics:
+        return "No valid metrics were produced; inspect error_summary.json."
     
     # Calculate column widths
     model_width = max(len(model) for model in results_data.keys())
@@ -1168,11 +1185,10 @@ def main():
     load_dotenv()
     # Get token from environment variable
     token = os.getenv("HUGGINGFACE_TOKEN")
-    if not token:
-        raise ValueError("HUGGINGFACE_TOKEN not found in .env file")
-    
-    # Log in with your HF access token
-    login(token=token)
+    # The benchmark dataset is public.  Authentication is optional and only
+    # needed for higher Hugging Face rate limits.
+    if token:
+        login(token=token)
     workspace_root = os.getcwd()
     
     # Initialize components
@@ -1322,4 +1338,4 @@ def main():
             continue
 
 if __name__ == "__main__":
-    main() 
+    main()

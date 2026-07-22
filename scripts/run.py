@@ -3,6 +3,8 @@ import subprocess
 import json
 import argparse
 import signal
+import shutil
+import sys
 
 def find_all_datasets(base_dir):
     """
@@ -74,7 +76,11 @@ def run_optimization(input_files, output_dir="output", timeout=10, num_cores=8):
 
         # Run the main program to generate output
         try:
-            cmd = ["taskset", "-c", "0-" + str(num_cores - 1), "python3", "main.py"]
+            # taskset is Linux-only.  The thread-count environment variables
+            # below are the portable fallback used on macOS.
+            cmd = [sys.executable, "main.py"]
+            if shutil.which("taskset"):
+                cmd = ["taskset", "-c", "0-" + str(num_cores - 1), *cmd]
             cmd.extend(sorted(input_files))  # Add all input files
             cmd.append(output_file)  # Add output file
             print(cmd)
